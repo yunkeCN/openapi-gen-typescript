@@ -1,4 +1,4 @@
-# openapi-ts
+# openapi-gen-typescript
 Generate typescript code for openapi.
 
 ## Usage
