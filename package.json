@@ -22,9 +22,7 @@
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.0.2",
     "camelcase": "^6.1.0",
-    "json-schema-to-typescript": "^9.1.1",
     "mkdirp": "^1.0.4",
-    "openapi3-ts": "^2.0.0",
     "swagger2openapi": "^7.0.3"
   }
 }

@@ -4,7 +4,7 @@ import { gen } from "../src";
   await gen({
     url: 'https://petstore.swagger.io/v2/swagger.json',
     version: "2",
-    outputDir: `${__dirname}/gen`
+    outputDir: `${__dirname}/gen`,
   })
   process.exit(0);
 })();

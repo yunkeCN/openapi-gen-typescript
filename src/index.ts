@@ -3,25 +3,31 @@ import * as swagger2openapi from 'swagger2openapi';
 import * as swaggerParser from '@apidevtools/swagger-parser';
 // @ts-ignore
 import * as mkdirp from 'mkdirp';
-import { compile, DEFAULT_OPTIONS } from 'json-schema-to-typescript'
-import { format } from 'json-schema-to-typescript/dist/src/formatter'
-import {
-  BaseParameterObject, ContentObject,
-  MediaTypeObject,
-  OpenAPIObject,
-  OperationObject,
-  ParameterObject, RequestBodyObject
-} from 'openapi3-ts';
 import * as camelcase from 'camelcase';
 import { Options } from "camelcase";
 import * as fs from 'fs';
 import * as path from "path";
+import { transform } from "./schemaToTypes/transform";
+import { format } from "./util";
+import { IJsonSchema, OpenAPI, OpenAPIV3 } from "openapi-types";
+import ParameterBaseObject = OpenAPIV3.ParameterBaseObject;
+import MediaTypeObject = OpenAPIV3.MediaTypeObject;
+import OperationObject = OpenAPIV3.OperationObject;
+import PathItemObject = OpenAPIV3.PathItemObject;
+import ResponseObject = OpenAPIV3.ResponseObject;
+import ReferenceObject = OpenAPIV3.ReferenceObject;
+import ParameterObject = OpenAPIV3.ParameterObject;
+import RequestBodyObject = OpenAPIV3.RequestBodyObject;
+
+type ContentObject = {
+  [media: string]: MediaTypeObject;
+}
 
 function getCamelcase(urlPath: string, options?: Options): string {
   return camelcase(urlPath.split('/').join('_'), options);
 }
 
-function getCodeFromParameter(parameter: BaseParameterObject, name: string): string {
+function getCodeFromParameter(parameter: ParameterBaseObject, name: string): string {
   const { description, required } = parameter;
 
   let code = '';
@@ -36,7 +42,7 @@ function getCodeFromParameter(parameter: BaseParameterObject, name: string): str
 }
 
 interface ParameterMap {
-  [name: string]: BaseParameterObject;
+  [name: string]: ParameterBaseObject;
 }
 
 async function getCodeFromParameters(
@@ -67,28 +73,19 @@ async function getCodeFromContent(
   return (await Promise.all(Object.keys(content).map(async (mediaType, index) => {
     const responseTypeName = `${typeNamePrefix}${index > 0 ? getCamelcase(mediaType, { pascalCase: true }) : ''}`;
     responseTypeNames.push(responseTypeName);
-    return await compile(
-      {
-        ...(content[mediaType] as MediaTypeObject).schema,
-        title: responseTypeName,
-      },
-      responseTypeName,
-      {
-        bannerComment: `/** ${comment} */`,
-        $refOptions: { resolve: { file: null, external: true } as any },
-      },
-    );
+    return `export type ${responseTypeName} = ${transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema)}`
   }))).join('\n');
 }
 
 export async function gen(options: {
   url?: string;
   version: string;
-  object?: OpenAPIObject;
+  object?: OpenAPI.Document;
   // dir of output files
   outputDir: string;
   // fetch impl file path
   fetchModuleFile?: string;
+  pascalCase?: boolean;
 }) {
   const {
     url,
@@ -96,24 +93,25 @@ export async function gen(options: {
     object,
     fetchModuleFile = `${__dirname}/defaultFetch.ts`,
     outputDir,
+    pascalCase = true,
   } = options;
 
   const fetchModuleImportCode = `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`
 
-  let openApiData: OpenAPIObject;
+  let openApiData: OpenAPIV3.Document;
   if (url) {
     if (version === '2') {
       const openapi = await swagger2openapi.convertUrl(url, {
         patch: true,
       });
-      openApiData = await swaggerParser.dereference(openapi.openapi) as OpenAPIObject;
+      openApiData = openapi.openapi || await swaggerParser.dereference(openapi.openapi);
     } else {
-      openApiData = await swaggerParser.parse(url) as OpenAPIObject;
+      openApiData = await swaggerParser.parse(url) as OpenAPIV3.Document;
     }
   } else if (!object) {
     throw 'option: url or object must be specified one'
   } else {
-    openApiData = object;
+    openApiData = object as OpenAPIV3.Document;
   }
 
   let baseUrl = '';
@@ -125,10 +123,11 @@ export async function gen(options: {
   const { schemas } = openApiData.components || {};
   if (schemas) {
     schemasCode = (await Promise.all(Object.keys(schemas).map(async (schemaKey) => {
-      return await compile({ ...schemas[schemaKey], title: schemaKey }, schemaKey, {
-        bannerComment: '',
-        unreachableDefinitions: true,
-      });
+      const schemaObject = schemas[schemaKey] as IJsonSchema;
+      if (pascalCase) {
+        schemaKey = camelcase(schemaKey, { pascalCase: true });
+      }
+      return `export type ${schemaKey} = ${transform(schemaObject)}`;
     }))).join('\n');
   }
 
@@ -136,10 +135,10 @@ export async function gen(options: {
   const methods = ['get', 'post', 'options', 'put', 'delete', 'patch', 'head'];
   const pathsCode = (await Promise.all(Object.keys(paths)
     .map(async (urlPath) => {
-      const pathsObject = paths[urlPath];
-      return (await Promise.all(methods.filter(method => !!pathsObject[method])
+      const pathsObject: PathItemObject = paths[urlPath];
+      return (await Promise.all(methods.filter(method => !!(pathsObject as any)[method])
         .map(async (method) => {
-          const objectElement: OperationObject = pathsObject[method];
+          const objectElement: OperationObject = (pathsObject as any)[method] as OperationObject;
           const {
             operationId,
             parameters = [],
@@ -149,10 +148,10 @@ export async function gen(options: {
 
           const namespaceName = camelcase(operationId || `${method.toLowerCase()}${getCamelcase(urlPath, { pascalCase: true })}`, { pascalCase: true });
           const responseTypeNames: string[] = [];
-          const responsesCode: string = (await Promise.all(Object.keys(responses)
+          const responsesCode: string = (await Promise.all(Object.keys(responses as Object)
             .filter(key => key !== 'default')
             .map(async (statusCode) => {
-              const responsesObjectElement = responses[statusCode];
+              const responsesObjectElement: ResponseObject & ReferenceObject = (responses as any)[statusCode];
               const { $ref, content, description } = responsesObjectElement;
 
               if ($ref) {
@@ -161,7 +160,12 @@ export async function gen(options: {
               } else {
                 // response
                 const typeNamePrefix = `Response${camelcase(statusCode, { pascalCase: true })}`;
-                const responseCode = await getCodeFromContent(content, typeNamePrefix, description, responseTypeNames);
+                const responseCode = await getCodeFromContent(
+                  content as ContentObject,
+                  typeNamePrefix,
+                  description,
+                  responseTypeNames,
+                );
 
                 return responseCode;
               }
@@ -226,9 +230,9 @@ export async function request(options: {
 * DO NOT MODIFY IT BY HAND.
 */`,
     fetchModuleImportCode,
-    `export namespace Schema {${schemasCode}}`,
+    `export namespace components { export namespace schemas { ${schemasCode} } }`,
     `export namespace Api { ${pathsCode} }`,
-  ].join('\n'), DEFAULT_OPTIONS);
+  ].join('\n'));
 
   await mkdirp(outputDir);
   fs.writeFileSync(`${outputDir}/index.ts`, code);
