@@ -23,6 +23,21 @@ type ContentObject = {
   [media: string]: MediaTypeObject;
 }
 
+enum ETemplateCode {
+  RequestQueryCode = 'RequestQueryCode',
+  RequestHeaderCode = 'RequestHeaderCode',
+  RequestCookieCode = 'RequestCookieCode',
+  RequestBodyCode = 'RequestBodyCode',
+  ResponsesCode = 'ResponsesCode',
+  RequestFuncTypeCode = 'RequestFuncTypeCode',
+}
+
+type postScriptReturnType = {
+  [key in ETemplateCode]: string;
+} | {
+  [key: string]: string;
+}
+
 function getCamelcase(urlPath: string, options?: Options): string {
   return camelcase(urlPath.split('/').join('_'), options);
 }
@@ -86,7 +101,7 @@ export async function gen(options: {
   // fetch impl file path
   fetchModuleFile?: string;
   pascalCase?: boolean;
-  handlePostScript?: (obj: OperationObject, method: string) => { [key: string]: string };
+  handlePostScript?: (obj: OperationObject, method: string) => postScriptReturnType;
 }) {
   const {
     url,
@@ -212,7 +227,6 @@ export async function request(options: {
 }
 `;
 
-          const sortList = ['requestQueryCode', 'requestHeaderCode', 'requestCookieCode', 'requestBodyCode', 'responsesCode', 'requestFuncTypeCode'];
 
           let exportObj: { [key: string]: string } = {
             requestQueryCode,
@@ -228,6 +242,8 @@ export async function request(options: {
 
             exportObj = Object.assign({}, exportObj, result);
           }
+
+          const sortList = ['requestQueryCode', 'requestHeaderCode', 'requestCookieCode', 'requestBodyCode', 'responsesCode', 'requestFuncTypeCode'];
 
           const exportArr: string[] = [];
 
