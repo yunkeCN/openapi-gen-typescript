@@ -86,7 +86,7 @@ export async function gen(options: {
   // fetch impl file path
   fetchModuleFile?: string;
   pascalCase?: boolean;
-  handlePostScript?: (obj: OperationObject, method: string, result: string[]) => string[];
+  handlePostScript?: (obj: OperationObject, method: string) => { [key: string]: string };
 }) {
   const {
     url,
@@ -97,13 +97,7 @@ export async function gen(options: {
     pascalCase = true,
   } = options;
 
-  const fetchFile = fs.readFileSync(path.join(fetchModuleFile));
-
-  const fetchModuleFileName = fetchModuleFile.split('/').pop();
-
-  fs.writeFileSync(`${outputDir}/${fetchModuleFileName}`, fetchFile);
-
-  const fetchModuleImportCode = `import fetchImpl from './${(fetchModuleFileName as string).replace(/.ts$/, "")}';\n`
+  const fetchModuleImportCode = `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';\n`;
 
   let openApiData: OpenAPIV3.Document;
   if (url) {
@@ -218,20 +212,36 @@ export async function request(options: {
 }
 `;
 
-          let exportObj = [
+          const sortList = ['requestQueryCode', 'requestHeaderCode', 'requestCookieCode', 'requestBodyCode', 'responsesCode', 'requestFuncTypeCode'];
+
+          let exportObj: { [key: string]: string } = {
             requestQueryCode,
             requestHeaderCode,
             requestCookieCode,
             requestBodyCode,
             responsesCode,
             requestFuncTypeCode,
-          ]
-
-          if (options.handlePostScript) {
-            exportObj = await options.handlePostScript(objectElement, method, exportObj);
           }
 
-          return `export namespace ${namespaceName} {\n${exportObj.join('\n')
+          if (options.handlePostScript) {
+            const result = await options.handlePostScript(objectElement, method);
+
+            exportObj = Object.assign({}, exportObj, result);
+          }
+
+          const exportArr: string[] = [];
+
+          sortList.forEach(item => {
+            exportArr.push(exportObj[item]);
+          })
+
+          Object.keys(exportObj).forEach(item => {
+            if (!sortList.includes(item)) {
+              exportArr.unshift(exportObj[item]);
+            }
+          })
+
+          return `export namespace ${namespaceName} {\n${exportArr.join('\n')
             } \n}`;
         })))
         .join('\n');

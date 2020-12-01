@@ -6,7 +6,7 @@ import { gen } from "../src";
     url: 'http://localhost:9000/swagger/doc.json',
     version: "2",
     outputDir: `${__dirname}/gen`,
-    handlePostScript: (obj, method, result) => {
+    handlePostScript: (obj, method) => {
       const {
         parameters = [],
       } = obj;
@@ -22,8 +22,9 @@ import { gen } from "../src";
         }
       });
       const requestVariableCode = requestVariable.length > 0 ? `export const requestVariable = [${requestVariable.join(', ')}]` : "";
-      result.unshift(requestVariableCode);
-      return result;
+      return {
+        requestVariableCode
+      };
     }
   })
   process.exit(0);
