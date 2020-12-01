@@ -32,7 +32,7 @@ enum ETemplateCode {
   RequestFuncTypeCode = 'RequestFuncTypeCode',
 }
 
-type postScriptReturnType = {
+type PostScriptReturnType = {
   [key in ETemplateCode]: string;
 } | {
   [key: string]: string;
@@ -101,7 +101,7 @@ export async function gen(options: {
   // fetch impl file path
   fetchModuleFile?: string;
   pascalCase?: boolean;
-  handlePostScript?: (obj: OperationObject, method: string) => postScriptReturnType;
+  handlePostScript?: (obj: OperationObject, method: string) => PostScriptReturnType;
 }) {
   const {
     url,
