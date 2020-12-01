@@ -2,7 +2,7 @@ import { format as prettify, Options } from 'prettier'
 
 export const DEFAULT_OPTIONS: Options = {
   bracketSpacing: false,
-  printWidth: 120,
+  printWidth: 80,
   semi: true,
   singleQuote: false,
   tabWidth: 2,

@@ -86,6 +86,7 @@ export async function gen(options: {
   // fetch impl file path
   fetchModuleFile?: string;
   pascalCase?: boolean;
+  handlePostScript?: (obj: OperationObject, method: string, result: string[]) => string[];
 }) {
   const {
     url,
@@ -96,7 +97,13 @@ export async function gen(options: {
     pascalCase = true,
   } = options;
 
-  const fetchModuleImportCode = `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`
+  const fetchFile = fs.readFileSync(path.join(fetchModuleFile));
+
+  const fetchModuleFileName = fetchModuleFile.split('/').pop();
+
+  fs.writeFileSync(`${outputDir}/${fetchModuleFileName}`, fetchFile);
+
+  const fetchModuleImportCode = `import fetchImpl from './${(fetchModuleFileName as string).replace(/.ts$/, "")}';\n`
 
   let openApiData: OpenAPIV3.Document;
   if (url) {
@@ -206,19 +213,26 @@ export async function request(options: {
   body${requestBodyRequired ? '' : '?'}: ${requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'};
   headers?: RequestHeader;
   cookie?: Cookie;
-}): Promise<{ body: ${responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'} }> {
-  return fetchImpl({...options, url: '${baseUrl}${urlPath}'});
+}, otherOptions?: any): Promise<{ body: ${responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'} }> {
+  return fetchImpl({...options, ...otherOptions, url: '${baseUrl}${urlPath}', method: '${method.toLowerCase()}'});
 }
 `;
 
-          return `export namespace ${namespaceName} {\n${[
+          let exportObj = [
             requestQueryCode,
             requestHeaderCode,
             requestCookieCode,
             requestBodyCode,
             responsesCode,
             requestFuncTypeCode,
-          ].join('\n')}\n}`;
+          ]
+
+          if (options.handlePostScript) {
+            exportObj = await options.handlePostScript(objectElement, method, exportObj);
+          }
+
+          return `export namespace ${namespaceName} {\n${exportObj.join('\n')
+            } \n}`;
         })))
         .join('\n');
     })))
@@ -230,8 +244,8 @@ export async function request(options: {
 * DO NOT MODIFY IT BY HAND.
 */`,
     fetchModuleImportCode,
-    `export namespace components { export namespace schemas { ${schemasCode} } }`,
-    `export namespace Api { ${pathsCode} }`,
+    `export namespace components { export namespace schemas { ${schemasCode} } } `,
+    `export namespace Api { ${pathsCode} } `,
   ].join('\n'));
 
   await mkdirp(outputDir);
