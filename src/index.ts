@@ -23,6 +23,21 @@ type ContentObject = {
   [media: string]: MediaTypeObject;
 }
 
+enum ETemplateCode {
+  RequestQueryCode = 'requestQueryCode',
+  RequestHeaderCode = 'requestHeaderCode',
+  RequestCookieCode = 'requestCookieCode',
+  RequestBodyCode = 'requestBodyCode',
+  ResponsesCode = 'responsesCode',
+  RequestFuncTypeCode = 'requestFuncTypeCode',
+}
+
+type PostScriptReturnType = {
+  [key in ETemplateCode]: string;
+} | {
+  [key: string]: string;
+}
+
 function getCamelcase(urlPath: string, options?: Options): string {
   return camelcase(urlPath.split('/').join('_'), options);
 }
@@ -86,6 +101,7 @@ export async function gen(options: {
   // fetch impl file path
   fetchModuleFile?: string;
   pascalCase?: boolean;
+  handlePostScript?: (obj: OperationObject, method: string) => PostScriptReturnType;
 }) {
   const {
     url,
@@ -96,7 +112,7 @@ export async function gen(options: {
     pascalCase = true,
   } = options;
 
-  const fetchModuleImportCode = `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`
+  const fetchModuleImportCode = `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';\n`;
 
   let openApiData: OpenAPIV3.Document;
   if (url) {
@@ -206,19 +222,43 @@ export async function request(options: {
   body${requestBodyRequired ? '' : '?'}: ${requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'};
   headers?: RequestHeader;
   cookie?: Cookie;
-}): Promise<{ body: ${responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'} }> {
-  return fetchImpl({...options, url: '${baseUrl}${urlPath}'});
+}, otherOptions?: any): Promise<{ body: ${responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'} }> {
+  return fetchImpl({...options, ...otherOptions, url: '${baseUrl}${urlPath}', method: '${method.toLowerCase()}'});
 }
 `;
 
-          return `export namespace ${namespaceName} {\n${[
+
+          let exportObj: { [key: string]: string } = {
             requestQueryCode,
             requestHeaderCode,
             requestCookieCode,
             requestBodyCode,
             responsesCode,
             requestFuncTypeCode,
-          ].join('\n')}\n}`;
+          }
+
+          if (options.handlePostScript) {
+            const result = await options.handlePostScript(objectElement, method);
+
+            exportObj = Object.assign({}, exportObj, result);
+          }
+
+          const sortList = ['requestQueryCode', 'requestHeaderCode', 'requestCookieCode', 'requestBodyCode', 'responsesCode', 'requestFuncTypeCode'];
+
+          const exportArr: string[] = [];
+
+          sortList.forEach(item => {
+            exportArr.push(exportObj[item]);
+          })
+
+          Object.keys(exportObj).forEach(item => {
+            if (!sortList.includes(item)) {
+              exportArr.unshift(exportObj[item]);
+            }
+          })
+
+          return `export namespace ${namespaceName} {\n${exportArr.join('\n')
+            } \n}`;
         })))
         .join('\n');
     })))
@@ -230,8 +270,8 @@ export async function request(options: {
 * DO NOT MODIFY IT BY HAND.
 */`,
     fetchModuleImportCode,
-    `export namespace components { export namespace schemas { ${schemasCode} } }`,
-    `export namespace Api { ${pathsCode} }`,
+    `export namespace components { export namespace schemas { ${schemasCode} } } `,
+    `export namespace Api { ${pathsCode} } `,
   ].join('\n'));
 
   await mkdirp(outputDir);

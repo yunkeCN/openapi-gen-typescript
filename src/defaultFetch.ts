@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { Method } from "axios";
 
 export default async function fetch(options: {
   url: string;
@@ -6,12 +6,14 @@ export default async function fetch(options: {
   body?: any;
   headers?: any;
   cookie?: any;
+  method?: Method;
 }): Promise<{ body: any }> {
   const res = await axios.request({
     url: options.url,
     headers: options.headers,
     data: options.body,
     params: options.query,
+    method: options.method,
   });
   return {
     body: res.data,

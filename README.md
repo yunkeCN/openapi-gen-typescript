@@ -13,11 +13,12 @@ gen({
 
 ## doc
 
-Param | Description
----|---
-url | The url of fetch openapi or swagger data
-version | The version of Swagger or OpenApi, example: `2`, `3`
-outputDir | Dir of output files
-fetchModuleFile | Fetch impl file path
+| Param            | Description                                          |
+| ---------------- | ---------------------------------------------------- |
+| url              | The url of fetch openapi or swagger data             |
+| version          | The version of Swagger or OpenApi, example: `2`, `3` |
+| outputDir        | Dir of output files                                  |
+| fetchModuleFile  | Fetch impl file path                                 |
+| handlePostScript | post script to customize the result                  |
 
 
