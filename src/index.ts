@@ -24,12 +24,12 @@ type ContentObject = {
 }
 
 enum ETemplateCode {
-  RequestQueryCode = 'RequestQueryCode',
-  RequestHeaderCode = 'RequestHeaderCode',
-  RequestCookieCode = 'RequestCookieCode',
-  RequestBodyCode = 'RequestBodyCode',
-  ResponsesCode = 'ResponsesCode',
-  RequestFuncTypeCode = 'RequestFuncTypeCode',
+  RequestQueryCode = 'requestQueryCode',
+  RequestHeaderCode = 'requestHeaderCode',
+  RequestCookieCode = 'requestCookieCode',
+  RequestBodyCode = 'requestBodyCode',
+  ResponsesCode = 'responsesCode',
+  RequestFuncTypeCode = 'requestFuncTypeCode',
 }
 
 type PostScriptReturnType = {
