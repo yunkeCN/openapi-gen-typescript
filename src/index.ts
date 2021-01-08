@@ -162,8 +162,8 @@ export async function gen(options: {
             responses,
           } = objectElement;
 
-          let namespaceName = camelcase(operationId || `${method.toLowerCase()}${getCamelcase(urlPath, { pascalCase: true })}`, { pascalCase: true });
-          namespaceName = namespaceName.replace(/[^a-zA-Z0-9_]/g, "");
+          let namespaceName = operationId || `${method.toLowerCase()}${getCamelcase(urlPath, { pascalCase: true })}`;
+          namespaceName = camelcase(namespaceName.replace(/[^a-zA-Z0-9_]/g, ""), { pascalCase: true });
           const responseTypeNames: string[] = [];
           const responsesCode: string = (await Promise.all(Object.keys(responses as Object)
             .filter(key => key !== 'default')
