@@ -4,6 +4,7 @@ import { gen } from "../src";
   await gen({
     // url: 'https://petstore.swagger.io/v2/swagger.json',
     url: 'http://localhost:9000/swagger/doc.json',
+    // path: './swagger.json',
     version: "2",
     outputDir: `${__dirname}/gen`,
     handlePostScript: (obj, method) => {
