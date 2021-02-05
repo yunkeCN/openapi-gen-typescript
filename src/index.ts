@@ -10,6 +10,7 @@ import * as path from "path";
 import { transform } from "./schemaToTypes/transform";
 import { format } from "./util";
 import { IJsonSchema, OpenAPI, OpenAPIV3 } from "openapi-types";
+import {AllMethods, SortList, NotModifyCode, ETemplateCode} from './constants';
 import ParameterBaseObject = OpenAPIV3.ParameterBaseObject;
 import MediaTypeObject = OpenAPIV3.MediaTypeObject;
 import OperationObject = OpenAPIV3.OperationObject;
@@ -21,15 +22,6 @@ import RequestBodyObject = OpenAPIV3.RequestBodyObject;
 
 type ContentObject = {
   [media: string]: MediaTypeObject;
-}
-
-enum ETemplateCode {
-  RequestQueryCode = 'requestQueryCode',
-  RequestHeaderCode = 'requestHeaderCode',
-  RequestCookieCode = 'requestCookieCode',
-  RequestBodyCode = 'requestBodyCode',
-  ResponsesCode = 'responsesCode',
-  RequestFuncTypeCode = 'requestFuncTypeCode',
 }
 
 type PostScriptReturnType = {
@@ -69,10 +61,10 @@ async function getCodeFromParameters(
     return '';
   }
 
-  const bodyCode = (await Promise.all(Object.keys(parameters).map((parameterName) => {
+  const bodyCode = await Promise.all(Object.keys(parameters).map((parameterName) => {
     return getCodeFromParameter(parameters[parameterName], parameterName);
-  }))).join('\n');
-  return `${exportKey ? 'export' : ''} interface ${name} {\n${bodyCode}\n}`;
+  }));
+  return `${exportKey ? 'export' : ''} interface ${name} {\n${bodyCode.join('\n')}\n}`;
 }
 
 async function getCodeFromContent(
@@ -85,11 +77,18 @@ async function getCodeFromContent(
     return '';
   }
 
-  return (await Promise.all(Object.keys(content).map(async (mediaType, index) => {
+  const contentCode = await Promise.all(Object.keys(content).map(async (mediaType, index) => {
     const responseTypeName = `${typeNamePrefix}${index > 0 ? getCamelcase(mediaType, { pascalCase: true }) : ''}`;
-    responseTypeNames.push(responseTypeName);
-    return `export type ${responseTypeName} = ${transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema)}`
-  }))).join('\n');
+    let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
+    if (jsonSchema.includes('[]')) {
+      jsonSchema = jsonSchema.replace(/[\(\)\[\]]+/g, '');
+      responseTypeNames.push(`${responseTypeName}[]`);
+    } else {
+      responseTypeNames.push(responseTypeName);
+    }
+    return `export type ${responseTypeName} = ${jsonSchema}`;
+  }));
+  return contentCode.join('\n');
 }
 
 export async function gen(options: {
@@ -114,29 +113,22 @@ export async function gen(options: {
     pascalCase = true,
   } = options;
 
-  const fetchModuleImportCode = `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';\n`;
-
   let openApiData: OpenAPIV3.Document;
-  if (url) {
-    if (version === '2') {
-      const openapi = await swagger2openapi.convertUrl(url, {
+  if (url || filePath) {
+    const { dereference, parse } = swaggerParser;
+    const params: any = url || filePath;
+    if (version === "2") {
+      const { convertUrl, convertFile } = swagger2openapi;
+      const openapiConvert = url ? convertUrl : convertFile;
+      const openapi = await openapiConvert(params, {
         patch: true,
       });
-      openApiData = openapi.openapi || await swaggerParser.dereference(openapi.openapi);
+      openApiData = openapi.openapi || (await dereference(openapi.openapi));
     } else {
-      openApiData = await swaggerParser.parse(url) as OpenAPIV3.Document;
-    }
-  } else if (filePath) {
-    if (version === '2') {
-      const openapi = await swagger2openapi.convertFile(filePath, {
-        patch: true,
-      });
-      openApiData = openapi.openapi || await swaggerParser.dereference(openapi.openapi);
-    } else {
-      openApiData = await swaggerParser.parse(filePath) as OpenAPIV3.Document;
+      openApiData = (await parse(params)) as OpenAPIV3.Document;
     }
   } else if (!object) {
-    throw 'option: url or object must be specified one'
+    throw "option: url or object must be specified one";
   } else {
     openApiData = object as OpenAPIV3.Document;
   }
@@ -146,45 +138,82 @@ export async function gen(options: {
     baseUrl = openApiData.servers[0].url;
   }
 
-  let schemasCode: string = '';
+  const schemasTypesCode: string[] = [];
+  const schemasClassCode: string[] = [];
   const { schemas } = openApiData.components || {};
   if (schemas) {
-    schemasCode = (await Promise.all(Object.keys(schemas).map(async (schemaKey) => {
+    Object.keys(schemas).forEach(schemaKey => {
       const schemaObject = schemas[schemaKey] as IJsonSchema;
       if (pascalCase) {
         schemaKey = camelcase(schemaKey, { pascalCase: true });
       }
-      return `export type ${schemaKey} = ${transform(schemaObject)}`;
-    }))).join('\n');
+      const transformObject = transform(schemaObject);
+      schemasTypesCode.push(`export type ${schemaKey} = ${transformObject}`);
+      schemasClassCode.push(`export class ${schemaKey} ${transformObject.replace(/[()]/g, '')}\n`)
+    });
   }
 
   const { paths } = openApiData;
-  const methods = ['get', 'post', 'options', 'put', 'delete', 'patch', 'head'];
-  const pathsCode = (await Promise.all(Object.keys(paths)
-    .map(async (urlPath) => {
+
+  const pathsCode: string[] = [];
+  const pathsMap: {[key: string]: any} = {};
+  await Promise.all(Object.keys(paths).map(async (urlPath) => {
       const pathsObject: PathItemObject = paths[urlPath];
-      return (await Promise.all(methods.filter(method => !!(pathsObject as any)[method])
-        .map(async (method) => {
+      const filterMethods = AllMethods.filter(method => !!(pathsObject as any)[method]);
+      const pathsTypesCode: string[] = [];
+      await Promise.all(filterMethods.map(async (method) => {
           const objectElement: OperationObject = (pathsObject as any)[method] as OperationObject;
           const {
             operationId,
             parameters = [],
             requestBody = {},
             responses,
+            summary,
           } = objectElement;
 
           let namespaceName = operationId || `${method.toLowerCase()}${getCamelcase(urlPath, { pascalCase: true })}`;
           namespaceName = camelcase(namespaceName.replace(/[^a-zA-Z0-9_]/g, ""), { pascalCase: true });
+
+                    // request parameter
+                    const requestHeaders: ParameterMap = {};
+                    const requestCookies: ParameterMap = {};
+                    const requestQuery: ParameterMap = {};
+                    parameters.forEach((parameter) => {
+                      const { in: keyIn, name, ...otherParams } = parameter as ParameterObject;
+                      switch (keyIn) {
+                        case 'query':
+                          requestQuery[name] = otherParams;
+                          break;
+                        case 'cookie':
+                          requestCookies[name] = otherParams;
+                          break;
+                        case 'header':
+                          if (["CONTENT-TYPE", "COOKIE"].indexOf(name.toUpperCase()) === -1) {
+                            requestHeaders[name] = otherParams;
+                          }
+                          break;
+                      }
+                    });
+                    const requestHeaderCode = await getCodeFromParameters(requestHeaders, 'RequestHeader', true);
+                    const requestQueryCode = await getCodeFromParameters(requestQuery, 'Query', true);
+                    const requestCookieCode = await getCodeFromParameters(requestCookies, 'Cookie', true);
+
+                    // request body
+                    const { content, required: requestBodyRequired, description: requestBodyDescription } = (requestBody as RequestBodyObject);
+
+                    const requestBodyTypeNames: string[] = [];
+                    const requestBodyCode = await getCodeFromContent(content, `Body`, requestBodyDescription, requestBodyTypeNames);
+
+                    // response
           const responseTypeNames: string[] = [];
-          const responsesCode: string = (await Promise.all(Object.keys(responses as Object)
-            .filter(key => key !== 'default')
-            .map(async (statusCode) => {
+          const responsesArr = Object.keys(responses as Object);
+          const responsesCode = (await Promise.all(responsesArr.map(async (statusCode) => {
               const responsesObjectElement: ResponseObject & ReferenceObject = (responses as any)[statusCode];
               const { $ref, content, description } = responsesObjectElement;
 
               if ($ref) {
                 // TODO
-                return '';
+                return [];
               } else {
                 // response
                 const typeNamePrefix = `Response${camelcase(statusCode, { pascalCase: true })}`;
@@ -199,46 +228,18 @@ export async function gen(options: {
               }
             }))).join('\n');
 
-          // request parameter
-          const requestHeaders: ParameterMap = {};
-          const requestCookies: ParameterMap = {};
-          const requestQuery: ParameterMap = {};
-          parameters.forEach((parameter) => {
-            const { in: keyIn, name, ...otherParams } = parameter as ParameterObject;
-            switch (keyIn) {
-              case 'query':
-                requestQuery[name] = otherParams;
-                break;
-              case 'cookie':
-                requestCookies[name] = otherParams;
-                break;
-              case 'header':
-                if (["CONTENT-TYPE", "COOKIE"].indexOf(name.toUpperCase()) === -1) {
-                  requestHeaders[name] = otherParams;
-                }
-                break;
-            }
-          });
-          const requestHeaderCode = await getCodeFromParameters(requestHeaders, 'RequestHeader', true);
-          const requestQueryCode = await getCodeFromParameters(requestQuery, 'Query', true);
-          const requestCookieCode = await getCodeFromParameters(requestCookies, 'Cookie', true);
-
-          const { content, required: requestBodyRequired, description: requestBodyDescription } = (requestBody as RequestBodyObject);
-
-          const requestBodyTypeNames: string[] = [];
-          const requestBodyCode = await getCodeFromContent(content, `Body`, requestBodyDescription, requestBodyTypeNames);
-
           const requestFuncTypeCode = `
-export async function request(options: {
-  query: Query;
-  body${requestBodyRequired ? '' : '?'}: ${requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'};
-  headers?: RequestHeader;
-  cookie?: Cookie;
-}, otherOptions?: any): Promise<{ body: ${responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'} }> {
-  return fetchImpl({...options, ...otherOptions, url: '${baseUrl}${urlPath}', method: '${method.toLowerCase()}'});
-}
-`;
+            export async function request(options: {
+              query: Query;
+              body${requestBodyRequired ? '' : '?'}: ${requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'};
+              headers?: RequestHeader;
+              cookie?: Cookie;
+            }, otherOptions?: any): Promise<{ body: ${responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'} }> {
+              return fetchImpl({...options, ...otherOptions, url: '${baseUrl}${urlPath}', method: '${method.toLowerCase()}'});
+            }
+          `;
 
+          const requestUrl = `export const url = \`${baseUrl}${urlPath}\``;
 
           let exportObj: { [key: string]: string } = {
             requestQueryCode,
@@ -247,6 +248,7 @@ export async function request(options: {
             requestBodyCode,
             responsesCode,
             requestFuncTypeCode,
+            requestUrl,
           }
 
           if (options.handlePostScript) {
@@ -255,39 +257,62 @@ export async function request(options: {
             exportObj = Object.assign({}, exportObj, result);
           }
 
-          const sortList = ['requestQueryCode', 'requestHeaderCode', 'requestCookieCode', 'requestBodyCode', 'responsesCode', 'requestFuncTypeCode'];
-
           const exportArr: string[] = [];
 
-          sortList.forEach(item => {
+          SortList.forEach(item => {
             exportArr.push(exportObj[item]);
           })
 
           Object.keys(exportObj).forEach(item => {
-            if (!sortList.includes(item)) {
+            if (!SortList.includes(item)) {
               exportArr.unshift(exportObj[item]);
             }
           })
 
-          return `export namespace ${namespaceName} {\n${exportArr.join('\n')
-            } \n}`;
-        })))
-        .join('\n');
-    })))
-    .join('\n');
-  const code = format([
-    `/* tslint:disable */
-/**
-* This file was automatically generated by openapi-gen-typescript.
-* DO NOT MODIFY IT BY HAND.
-*/`,
-    fetchModuleImportCode,
-    `export namespace components { export namespace schemas { ${schemasCode} } } `,
-    `export namespace Api { ${pathsCode} } `,
+          pathsTypesCode.push(`export namespace ${namespaceName} {\n${exportArr.join('\n')}\n}`);
+
+          const generateClassCode = exportArr.map(exp => {
+            return exp.replace(/ interface | type = /g, ' class ').replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}');
+          }).join('\n');
+          pathsMap[namespaceName] = {
+            summary,
+            code: generateClassCode,
+          };
+        }));
+        pathsCode.push(pathsTypesCode.join('\n'));
+    }));
+
+  // generate code
+  await mkdirp(outputDir);
+
+  const typesCode = format([
+    NotModifyCode,
+    `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';\n`,
+    `export namespace components { export namespace schemas { ${schemasTypesCode.join('\n')} } } `,
+    `export namespace Api { ${pathsCode.join('\n')} } `,
   ].join('\n'));
 
-  await mkdirp(outputDir);
-  fs.writeFileSync(`${outputDir}/index.ts`, code);
+  const schemasCode = format([
+    NotModifyCode,
+    `import { components } from './index';\n`,
+    schemasClassCode.join('\n'),
+  ].join('\n'));
+
+  Object.keys(pathsMap).map(namespaceName => {
+    const {summary, code} = pathsMap[namespaceName];
+    const pathCode = format([
+      `/**
+      * @namespace ${namespaceName}
+      * @summary ${summary}
+      */\n`,
+      `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
+      `import * as schemas from './schemas';\n`,
+      code,
+    ].join('\n'));
+    fs.writeFileSync(`${outputDir}/${namespaceName}.ts`, pathCode);
+  })
+  fs.writeFileSync(`${outputDir}/index.ts`, typesCode);
+  fs.writeFileSync(`${outputDir}/schemas.ts`, schemasCode);
 
   console.info(`Generate code successful in directory: ${outputDir}`);
 }
