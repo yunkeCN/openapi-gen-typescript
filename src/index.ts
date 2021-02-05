@@ -369,6 +369,7 @@ export async function gen(options: {
   const typesCode = format(
     [
       NotModifyCode,
+      `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
       `export namespace components { export namespace schemas { ${schemasTypesCode.join('\n')} } } `,
       `export namespace Api { ${pathsCode.join('\n')} } `,
     ].join('\n'),
