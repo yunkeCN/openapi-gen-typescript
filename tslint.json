@@ -1,0 +1,18 @@
+{
+  "extends": ["tslint:recommended", "tslint-react", "tslint-react-hooks", "tslint-config-prettier"],
+  "linterOptions": {
+    "exclude": ["node_modules/**/*.ts"]
+  },
+  "rules": {
+    "ordered-imports": false,
+    "object-literal-sort-keys": false,
+    "member-access": false,
+    "no-var-requires": false,
+    "no-console": false,
+    "radix": false,
+    "max-classes-per-file": false,
+    "react-hooks-nesting": "error",
+    "jsx-boolean-value": false,
+    "jsx-no-lambda": false
+  }
+}
