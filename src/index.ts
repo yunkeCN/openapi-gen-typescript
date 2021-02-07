@@ -174,11 +174,15 @@ export async function gen(options: {
       const { convertObj, convertFile } = swagger2openapi;
       const openapiConvert = url ? convertObj : convertFile;
       if (url) {
-        const result = await Axios.get(url);
-        if (result.status !== 200) {
-          throw Error(`未返回正确的status code ${result.status}: ${url}`);
+        try {
+          const result = await Axios.get(url);
+          if (result.status !== 200) {
+            throw Error(`未返回正确的status code ${result.status}: ${url}`);
+          }
+          params = result.data;
+        } catch (e) {
+          console.error('e :>> ', e);
         }
-        params = result.data;
       }
       const openapi = await openapiConvert(params, {
         patch: true,
