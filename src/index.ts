@@ -19,6 +19,7 @@ import ResponseObject = OpenAPIV3.ResponseObject;
 import ReferenceObject = OpenAPIV3.ReferenceObject;
 import ParameterObject = OpenAPIV3.ParameterObject;
 import RequestBodyObject = OpenAPIV3.RequestBodyObject;
+import Axios from 'axios';
 
 type ContentObject = {
   [media: string]: MediaTypeObject;
@@ -167,10 +168,18 @@ export async function gen(options: {
   let openApiData: OpenAPIV3.Document;
   if (url || filePath) {
     const { dereference, parse } = swaggerParser;
-    const params: any = url || filePath;
+    let params: any = url || filePath;
     if (version === '2') {
-      const { convertUrl, convertFile } = swagger2openapi;
-      const openapiConvert = url ? convertUrl : convertFile;
+      // convertUrl响应速度很慢，改为使用convertObj
+      const { convertObj, convertFile } = swagger2openapi;
+      const openapiConvert = url ? convertObj : convertFile;
+      if (url) {
+        const result = await Axios.get(url);
+        if (result.status !== 200) {
+          throw Error(`未返回正确的status code ${result.status}: ${url}`);
+        }
+        params = result.data;
+      }
       const openapi = await openapiConvert(params, {
         patch: true,
       });

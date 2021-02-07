@@ -1,18 +1,16 @@
-import { gen } from "../src";
-import * as path from "path";
+import { gen } from '../src';
+// import * as path from "path";
 
 (async function () {
   await gen({
-    // url: 'https://petstore.swagger.io/v2/swagger.json',
-    path: path.join(__dirname, "./petstore.json"),
-    version: "2",
+    url: 'https://petstore.swagger.io/v2/swagger.json',
+    // path: path.join(__dirname, "./petstore.json"),
+    version: '2',
     outputDir: `${__dirname}/gen`,
     handlePostScript: (obj, method) => {
-      const {
-        parameters = [],
-      } = obj;
+      const { parameters = [] } = obj;
       const requestVariable: string[] = [];
-      parameters.forEach((parameter) => {
+      parameters.forEach(parameter => {
         const { in: keyIn, name } = parameter as any;
         switch (keyIn) {
           case 'query':
@@ -22,11 +20,14 @@ import * as path from "path";
             break;
         }
       });
-      const requestVariableCode = requestVariable.length > 0 ? `export const requestVariable = [${requestVariable.join(', ')}]` : "";
+      const requestVariableCode =
+        requestVariable.length > 0
+          ? `export const requestVariable = [${requestVariable.join(', ')}]`
+          : '';
       return {
-        requestVariableCode
+        requestVariableCode,
       };
-    }
-  })
+    },
+  });
   process.exit(0);
 })();
