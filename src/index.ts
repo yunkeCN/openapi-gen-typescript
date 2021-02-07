@@ -98,7 +98,7 @@ async function getCodeFromContent(
       }`;
       let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
       if (jsonSchema.includes('[]')) {
-        jsonSchema = jsonSchema.replace(/[\(\)\[\]]+/g, '');
+        jsonSchema = jsonSchema.replace(/\(|\)|(\[\])+/g, '');
         responseTypeNames.push(`${responseTypeName}[]`);
       } else {
         responseTypeNames.push(responseTypeName);
