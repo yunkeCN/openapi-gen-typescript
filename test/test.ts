@@ -1,10 +1,10 @@
 import { gen } from "../src";
+import * as path from "path";
 
 (async function () {
   await gen({
     // url: 'https://petstore.swagger.io/v2/swagger.json',
-    url: 'http://localhost:9000/swagger/doc.json',
-    // path: './swagger.json',
+    path: path.join(__dirname, "./petstore.json"),
     version: "2",
     outputDir: `${__dirname}/gen`,
     handlePostScript: (obj, method) => {
