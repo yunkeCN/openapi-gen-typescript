@@ -181,7 +181,7 @@ export async function gen(options: {
           }
           params = result.data;
         } catch (e) {
-          console.error('e :>> ', e);
+          console.error('e :>> ', e.message);
         }
       }
       const openapi = await openapiConvert(params, {
