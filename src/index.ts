@@ -404,7 +404,7 @@ export async function gen(options: {
             `import fetchImpl from '${path
               .relative(currTagNameDir, fetchModuleFile)
               .replace(/\.ts$/, '')}';`,
-            `import * as schemas from '../schemas';\n`,
+            schemasClassCode.length > 0 ? `import * as schemas from '../schemas';\n` : '\n',
             code,
           ].join('\n');
           tagIndex.push(`export * as ${namespaceName} from './${namespaceName}';`);
@@ -428,10 +428,12 @@ export async function gen(options: {
     `export namespace Api { ${pathsCode.join('\n')} } `,
   ].join('\n');
 
-  const schemasCode = [NotModifyCode, schemasClassCode.join('\n')].join('\n');
-
   fs.writeFileSync(`${outputDir}/index.ts`, format(typesCode));
-  fs.writeFileSync(`${outputDir}/schemas.ts`, format(schemasCode));
+
+  if (schemasClassCode.length > 0) {
+    const schemasCode = [NotModifyCode, schemasClassCode.join('\n')].join('\n');
+    fs.writeFileSync(`${outputDir}/schemas.ts`, format(schemasCode));
+  }
 
   console.info(`Generate code successful in directory: ${outputDir}`);
 }
