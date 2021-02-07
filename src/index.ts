@@ -93,7 +93,9 @@ async function getCodeFromContent(
 
   const contentCode = await Promise.all(
     Object.keys(content).map(async (mediaType, index) => {
-      const responseTypeName = `${typeNamePrefix}${index > 0 ? getCamelcase(mediaType, { pascalCase: true }) : ''}`;
+      const responseTypeName = `${typeNamePrefix}${
+        index > 0 ? getCamelcase(mediaType, { pascalCase: true }) : ''
+      }`;
       let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
       if (jsonSchema.includes('[]')) {
         jsonSchema = jsonSchema.replace(/[\(\)\[\]]+/g, '');
@@ -214,10 +216,23 @@ export async function gen(options: {
       await Promise.all(
         filterMethods.map(async method => {
           const objectElement: OperationObject = (pathsObject as any)[method] as OperationObject;
-          const { operationId, parameters = [], requestBody = {}, responses, summary, tags } = objectElement;
+          const {
+            operationId,
+            parameters = [],
+            requestBody = {},
+            responses,
+            summary,
+            tags,
+          } = objectElement;
 
-          let namespaceName = operationId || `${method.toLowerCase()}${getCamelcase(urlPath, { pascalCase: true })}`;
-          namespaceName = camelcase(namespaceName.replace(/[^a-zA-Z0-9_]/g, ''), { pascalCase: true });
+          let namespaceName =
+            operationId ||
+            `${method.toLowerCase()}${getCamelcase(urlPath, {
+              pascalCase: true,
+            })}`;
+          namespaceName = camelcase(namespaceName.replace(/[^a-zA-Z0-9_]/g, ''), {
+            pascalCase: true,
+          });
 
           // request parameter
           const requestHeaders: IParameterMap = {};
@@ -239,7 +254,11 @@ export async function gen(options: {
                 break;
             }
           });
-          const requestHeaderCode = await getCodeFromParameters(requestHeaders, 'RequestHeader', true);
+          const requestHeaderCode = await getCodeFromParameters(
+            requestHeaders,
+            'RequestHeader',
+            true,
+          );
           const requestQueryCode = await getCodeFromParameters(requestQuery, 'Query', true);
           const requestCookieCode = await getCodeFromParameters(requestCookies, 'Cookie', true);
 
@@ -264,7 +283,9 @@ export async function gen(options: {
           const responsesCode = (
             await Promise.all(
               responsesArr.map(async statusCode => {
-                const responsesObjectElement: ResponseObject & ReferenceObject = (responses as any)[statusCode];
+                const responsesObjectElement: ResponseObject & ReferenceObject = (responses as any)[
+                  statusCode
+                ];
                 const { $ref, content, description } = responsesObjectElement;
 
                 if ($ref) {
@@ -272,7 +293,9 @@ export async function gen(options: {
                   return [];
                 } else {
                   // response
-                  const typeNamePrefix = `Response${camelcase(statusCode, { pascalCase: true })}`;
+                  const typeNamePrefix = `Response${camelcase(statusCode, {
+                    pascalCase: true,
+                  })}`;
                   const responseCode = await getCodeFromContent(
                     content as ContentObject,
                     typeNamePrefix,
@@ -287,7 +310,7 @@ export async function gen(options: {
           ).join('\n');
 
           const requestFuncTypeCode = `
-            export async function request(options: {
+            export const request = async (options: {
               query: Query;
               body${requestBodyRequired ? '' : '?'}: ${
             requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'
@@ -296,9 +319,9 @@ export async function gen(options: {
               cookie?: Cookie;
             }, otherOptions?: any): Promise<{ body: ${
               responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'
-            } }> {
+            } }> =>  {
               return fetchImpl({...options, ...otherOptions, url: '${baseUrl}${urlPath}', method: '${method.toLowerCase()}'});
-            }
+            };
           `;
 
           const requestUrl = `export const url = \`${baseUrl}${urlPath}\``;
@@ -331,19 +354,24 @@ export async function gen(options: {
             }
           });
 
-          pathsTypesCode.push(`export namespace ${namespaceName} {\n${exportArr.join('\n')}\n}`);
+          const pathsTypesArr = exportArr.map(exp => {
+            return exp
+              .replace(/export const request = async/, 'export type request =')
+              .replace(/: Promise<([^>]+)>((\s|\S)+)/g, '=> Promise<$1>;');
+          });
+          pathsTypesCode.push(
+            `export namespace ${namespaceName} {\n${pathsTypesArr.join('\n')}\n}`,
+          );
 
-          const generateClassCode = exportArr
-            .map(exp => {
-              return exp
-                .replace(/ interface | type = /g, ' class ')
-                .replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}');
-            })
-            .join('\n');
+          const generateClassArr = exportArr.map(exp => {
+            return exp
+              .replace(/ interface | type = /g, ' class ')
+              .replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}');
+          });
           pathsMap[namespaceName] = {
             summary,
             tags: tags || [],
-            code: generateClassCode,
+            code: generateClassArr.join('\n'),
           };
         }),
       );
@@ -367,48 +395,47 @@ export async function gen(options: {
         const tagIndex: string[] = [];
         Object.keys(currMap).map((namespaceName: string) => {
           const { summary, code } = currMap[namespaceName];
-          const pathCode = format(
-            [
-              `/**
+          const pathCode = [
+            `/**
             * @namespace ${namespaceName}
             * @summary ${summary}
             */\n`,
-              `import fetchImpl from '${path.relative(currTagNameDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
-              `import * as schemas from '../schemas';\n`,
-              code,
-            ].join('\n'),
-          );
+            `import fetchImpl from '${path
+              .relative(currTagNameDir, fetchModuleFile)
+              .replace(/\.ts$/, '')}';`,
+            `import * as schemas from '../schemas';\n`,
+            code,
+          ].join('\n');
           tagIndex.push(`export * as ${namespaceName} from './${namespaceName}';`);
-          fs.writeFileSync(`${currTagNameDir}/${namespaceName}.ts`, pathCode);
+          fs.writeFileSync(`${currTagNameDir}/${namespaceName}.ts`, format(pathCode));
         });
-        const tagCode = format(
-          [
-            `/**
+        const tagCode = [
+          `/**
           * @description ${currTag.description}
           */\n`,
-            ...tagIndex,
-          ].join('\n'),
-        );
-        fs.writeFileSync(`${currTagNameDir}/index.ts`, tagCode);
+          ...tagIndex,
+        ].join('\n');
+
+        fs.writeFileSync(`${currTagNameDir}/index.ts`, format(tagCode));
       }
     }),
   );
 
-  const typesCode = format(
-    [
-      NotModifyCode,
-      `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
-      `export namespace components { export namespace schemas { ${schemasTypesCode.join('\n')} } } `,
-      `export namespace Api { ${pathsCode.join('\n')} } `,
-    ].join('\n'),
-  );
+  const typesCode = [
+    NotModifyCode,
+    `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
+    `export namespace components { export namespace schemas { ${schemasTypesCode.join('\n')} } } `,
+    `export namespace Api { ${pathsCode.join('\n')} } `,
+  ].join('\n');
 
-  const schemasCode = format(
-    [NotModifyCode, `import { components } from './index';\n`, schemasClassCode.join('\n')].join('\n'),
-  );
+  const schemasCode = [
+    NotModifyCode,
+    `import { components } from './index';\n`,
+    schemasClassCode.join('\n'),
+  ].join('\n');
 
-  fs.writeFileSync(`${outputDir}/index.ts`, typesCode);
-  fs.writeFileSync(`${outputDir}/schemas.ts`, schemasCode);
+  fs.writeFileSync(`${outputDir}/index.ts`, format(typesCode));
+  fs.writeFileSync(`${outputDir}/schemas.ts`, format(schemasCode));
 
   console.info(`Generate code successful in directory: ${outputDir}`);
 }

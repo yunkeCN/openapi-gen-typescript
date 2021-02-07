@@ -3,4 +3,3 @@ node_modules
 test/gen
 dist
 .vscode
-.prettierrc.json
