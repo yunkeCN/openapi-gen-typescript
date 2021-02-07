@@ -50,12 +50,22 @@ function getCodeFromParameter(parameter: ParameterBaseObject, name: string): str
   return code;
 }
 
-interface ParameterMap {
+interface IParameterMap {
   [name: string]: ParameterBaseObject;
 }
 
+interface IPathMapContent {
+  summary: string | undefined;
+  tags: string[];
+  code: string;
+}
+
+interface IPathMap {
+  [key: string]: IPathMapContent;
+}
+
 async function getCodeFromParameters(
-  parameters: ParameterMap | undefined,
+  parameters: IParameterMap | undefined,
   name: string,
   exportKey: boolean = false,
 ): Promise<string> {
@@ -95,6 +105,39 @@ async function getCodeFromContent(
     }),
   );
   return contentCode.join('\n');
+}
+
+function getTagWithPaths(allTags: OpenAPIV3.TagObject[] | undefined, pathsMap: IPathMap) {
+  const commonTag: OpenAPIV3.TagObject = {
+    name: 'common',
+    description: 'common tag',
+  };
+  const customTags = allTags ? allTags.concat([commonTag]) : [commonTag];
+  const commonfilterPaths = Object.keys(pathsMap).filter(namespaceName => {
+    let filter = true;
+    customTags.forEach(currTag => {
+      if (pathsMap[namespaceName].tags.includes(currTag.name)) {
+        filter = false;
+      }
+    });
+    return filter;
+  });
+  return customTags.map(currTag => {
+    const pathsInCurrTag: { [key: string]: any } = {};
+    let filterPaths = Object.keys(pathsMap).filter(namespaceName =>
+      pathsMap[namespaceName].tags.includes(currTag.name),
+    );
+    if (currTag.name === 'common') {
+      filterPaths = filterPaths.concat(commonfilterPaths);
+    }
+    filterPaths.map(namespaceName => {
+      pathsInCurrTag[namespaceName] = pathsMap[namespaceName];
+    });
+    return {
+      ...currTag,
+      pathsInCurrTag,
+    };
+  });
 }
 
 export async function gen(options: {
@@ -162,7 +205,7 @@ export async function gen(options: {
   const { paths, tags: allTags } = openApiData;
 
   const pathsCode: string[] = [];
-  const pathsMap: { [key: string]: any } = {};
+  const pathsMap: IPathMap = {};
   await Promise.all(
     Object.keys(paths).map(async urlPath => {
       const pathsObject: PathItemObject = paths[urlPath];
@@ -177,9 +220,9 @@ export async function gen(options: {
           namespaceName = camelcase(namespaceName.replace(/[^a-zA-Z0-9_]/g, ''), { pascalCase: true });
 
           // request parameter
-          const requestHeaders: ParameterMap = {};
-          const requestCookies: ParameterMap = {};
-          const requestQuery: ParameterMap = {};
+          const requestHeaders: IParameterMap = {};
+          const requestCookies: IParameterMap = {};
+          const requestQuery: IParameterMap = {};
           parameters.forEach(parameter => {
             const { in: keyIn, name, ...otherParams } = parameter as ParameterObject;
             switch (keyIn) {
@@ -299,7 +342,7 @@ export async function gen(options: {
             .join('\n');
           pathsMap[namespaceName] = {
             summary,
-            tags,
+            tags: tags || [],
             code: generateClassCode,
           };
         }),
@@ -313,40 +356,15 @@ export async function gen(options: {
   // generate code
   await mkdirp(outputDir);
 
-  const commonTag: OpenAPIV3.TagObject = {
-    name: 'common',
-    description: 'common tag',
-  };
-  const customTags = allTags ? allTags.concat([commonTag]) : [commonTag];
-  const tagWithPaths = customTags.map(currTag => {
-    const pathsInCurrTag: { [key: string]: any } = {};
-    const filterPaths1 = Object.keys(pathsMap).filter(
-      namespaceName => !pathsMap[namespaceName].tags.includes(currTag.name),
-    );
-    const filterPaths2 = Object.keys(pathsMap).filter(namespaceName =>
-      pathsMap[namespaceName].tags.includes(currTag.name),
-    );
-    if (currTag.name !== 'common') {
-      filterPaths1.map(namespaceName => {
-        pathsInCurrTag[namespaceName] = pathsMap[namespaceName];
-      });
-    } else {
-      filterPaths2.map(namespaceName => {
-        pathsInCurrTag[namespaceName] = pathsMap[namespaceName];
-      });
-    }
-
-    return {
-      ...currTag,
-      pathsInCurrTag,
-    };
-  });
+  const tagWithPaths = getTagWithPaths(allTags, pathsMap);
 
   await Promise.all(
     tagWithPaths.map(async currTag => {
       const currMap = currTag.pathsInCurrTag;
       if (Object.keys(currMap).length > 0) {
-        await mkdirp(`${outputDir}/${currTag.name}`);
+        const currTagNameDir = `${outputDir}/${currTag.name}`;
+        await mkdirp(currTagNameDir);
+        const tagIndex: string[] = [];
         Object.keys(currMap).map((namespaceName: string) => {
           const { summary, code } = currMap[namespaceName];
           const pathCode = format(
@@ -355,13 +373,23 @@ export async function gen(options: {
             * @namespace ${namespaceName}
             * @summary ${summary}
             */\n`,
-              `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
-              `import * as schemas from './schemas';\n`,
+              `import fetchImpl from '${path.relative(currTagNameDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
+              `import * as schemas from '../schemas';\n`,
               code,
             ].join('\n'),
           );
-          fs.writeFileSync(`${outputDir}/${currTag.name}/${namespaceName}.ts`, pathCode);
+          tagIndex.push(`export * as ${namespaceName} from './${namespaceName}';`);
+          fs.writeFileSync(`${currTagNameDir}/${namespaceName}.ts`, pathCode);
         });
+        const tagCode = format(
+          [
+            `/**
+          * @description ${currTag.description}
+          */\n`,
+            ...tagIndex,
+          ].join('\n'),
+        );
+        fs.writeFileSync(`${currTagNameDir}/index.ts`, tagCode);
       }
     }),
   );
