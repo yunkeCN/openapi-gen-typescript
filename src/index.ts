@@ -200,7 +200,8 @@ export async function gen(options: {
       }
       const transformObject = transform(schemaObject);
       schemasTypesCode.push(`export type ${schemaKey} = ${transformObject}`);
-      schemasClassCode.push(`export class ${schemaKey} ${transformObject.replace(/[()]/g, '')}\n`);
+      const classObject = transformObject.replace(/[()]/g, '').replace(/components.schemas./g, '');
+      schemasClassCode.push(`export class ${schemaKey} ${classObject}\n`);
     });
   }
 
@@ -423,16 +424,11 @@ export async function gen(options: {
 
   const typesCode = [
     NotModifyCode,
-    `import fetchImpl from '${path.relative(outputDir, fetchModuleFile).replace(/\.ts$/, '')}';`,
     `export namespace components { export namespace schemas { ${schemasTypesCode.join('\n')} } } `,
     `export namespace Api { ${pathsCode.join('\n')} } `,
   ].join('\n');
 
-  const schemasCode = [
-    NotModifyCode,
-    `import { components } from './index';\n`,
-    schemasClassCode.join('\n'),
-  ].join('\n');
+  const schemasCode = [NotModifyCode, schemasClassCode.join('\n')].join('\n');
 
   fs.writeFileSync(`${outputDir}/index.ts`, format(typesCode));
   fs.writeFileSync(`${outputDir}/schemas.ts`, format(schemasCode));
