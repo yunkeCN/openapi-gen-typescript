@@ -98,7 +98,8 @@ async function getCodeFromContent(
         index > 0 ? getCamelcase(mediaType, { pascalCase: true }) : ''
       }`;
       let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
-      if (jsonSchema.includes('[]')) {
+      if (jsonSchema.lastIndexOf('[]') === jsonSchema.length - 2) {
+        console.log('jsonSchema :>> ', jsonSchema);
         jsonSchema = jsonSchema.replace(/\(|\)|(\[\])+/g, '');
         responseTypeNames.push(`${responseTypeName}[]`);
       } else {
