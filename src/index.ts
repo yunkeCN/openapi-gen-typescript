@@ -326,7 +326,7 @@ export async function gen(options: {
 
           const requestFuncTypeCode = `
             export const request = async (options: {
-              query: Query;
+              query?: Query;
               body${requestBodyRequired ? '' : '?'}: ${
             requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'
           };
