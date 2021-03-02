@@ -20,6 +20,7 @@ import ReferenceObject = OpenAPIV3.ReferenceObject;
 import ParameterObject = OpenAPIV3.ParameterObject;
 import RequestBodyObject = OpenAPIV3.RequestBodyObject;
 import Axios from 'axios';
+import * as _ from 'lodash';
 
 type ContentObject = {
   [media: string]: MediaTypeObject;
@@ -99,7 +100,6 @@ async function getCodeFromContent(
       }`;
       let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
       if (jsonSchema.lastIndexOf('[]') === jsonSchema.length - 2) {
-        console.log('jsonSchema :>> ', jsonSchema);
         jsonSchema = jsonSchema.replace(/\(|\)|(\[\])+/g, '');
         responseTypeNames.push(`${responseTypeName}[]`);
       } else {
@@ -142,6 +142,19 @@ function getTagWithPaths(allTags: OpenAPIV3.TagObject[] | undefined, pathsMap: I
       pathsInCurrTag,
     };
   });
+}
+
+async function getContentFromComponents(
+  openApiData: OpenAPIV3.Document,
+  ref: string,
+  typename: string,
+  arr: string[],
+): Promise<string> {
+  const splitRef = ref.replace(/^[^/]+\/components\//, '').split('/');
+  const result = _.get(openApiData.components, splitRef.join('.'));
+  const { content, description }: ReferenceObject & RequestBodyObject = result as any;
+  const requestBodyCode = await getCodeFromContent(content, typename, description, arr);
+  return requestBodyCode;
 }
 
 export async function gen(options: {
@@ -225,7 +238,7 @@ export async function gen(options: {
   const pathsMap: IPathMap = {};
   await Promise.all(
     Object.keys(paths).map(async urlPath => {
-      const pathsObject: PathItemObject = paths[urlPath];
+      const pathsObject: PathItemObject = paths[urlPath] as any;
       const filterMethods = AllMethods.filter(method => !!(pathsObject as any)[method]);
       const pathsTypesCode: string[] = [];
       await Promise.all(
@@ -279,18 +292,30 @@ export async function gen(options: {
 
           // request body
           const {
+            $ref: requestRef,
             content,
             required: requestBodyRequired,
             description: requestBodyDescription,
-          } = requestBody as RequestBodyObject;
+          }: ReferenceObject & RequestBodyObject = requestBody as any;
 
+          let requestBodyCode = '';
           const requestBodyTypeNames: string[] = [];
-          const requestBodyCode = await getCodeFromContent(
-            content,
-            `Body`,
-            requestBodyDescription,
-            requestBodyTypeNames,
-          );
+
+          if (requestRef) {
+            requestBodyCode = await getContentFromComponents(
+              openApiData,
+              requestRef,
+              `Body`,
+              requestBodyTypeNames,
+            );
+          } else {
+            requestBodyCode = await getCodeFromContent(
+              content,
+              `Body`,
+              requestBodyDescription,
+              requestBodyTypeNames,
+            );
+          }
 
           // response
           const responseTypeNames: string[] = [];
@@ -303,14 +328,20 @@ export async function gen(options: {
                 ];
                 const { $ref, content, description } = responsesObjectElement;
 
+                const typeNamePrefix = `Response${camelcase(statusCode, {
+                  pascalCase: true,
+                })}`;
                 if ($ref) {
-                  // TODO
-                  return [];
+                  const responseCode = await getContentFromComponents(
+                    openApiData,
+                    requestRef,
+                    typeNamePrefix,
+                    requestBodyTypeNames,
+                  );
+
+                  return responseCode;
                 } else {
                   // response
-                  const typeNamePrefix = `Response${camelcase(statusCode, {
-                    pascalCase: true,
-                  })}`;
                   const responseCode = await getCodeFromContent(
                     content as ContentObject,
                     typeNamePrefix,
