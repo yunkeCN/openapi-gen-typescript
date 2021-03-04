@@ -102,6 +102,9 @@ async function getCodeFromContent(
       if (jsonSchema.lastIndexOf('[]') === jsonSchema.length - 2) {
         jsonSchema = jsonSchema.replace(/\(|\)|(\[\])+/g, '');
         responseTypeNames.push(`${responseTypeName}[]`);
+      } else if (/^\(([\s\S]+)\)$/.test(jsonSchema)) {
+        jsonSchema = jsonSchema.replace(/^\(([\s\S]+)\)$/, '$1');
+        responseTypeNames.push(responseTypeName);
       } else {
         responseTypeNames.push(responseTypeName);
       }
@@ -412,7 +415,8 @@ export async function gen(options: {
           const generateClassArr = exportArr.map(exp => {
             return exp
               .replace(/ interface | type = /g, ' class ')
-              .replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}');
+              .replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}')
+              .replace(/ type ([^=]+) = /g, ' class $1 ');
           });
           pathsMap[namespaceName] = {
             summary,
