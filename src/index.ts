@@ -170,7 +170,7 @@ export async function gen(options: {
   // fetch impl file path
   fetchModuleFile?: string;
   pascalCase?: boolean;
-  handlePostScript?: (obj: OperationObject, method: string) => PostScriptReturnType;
+  handlePostScript?: (obj: OperationObject, method?: string) => PostScriptReturnType;
 }) {
   const {
     url,
@@ -266,12 +266,16 @@ export async function gen(options: {
           });
 
           // request parameter
+          const requestPath: IParameterMap = {};
           const requestHeaders: IParameterMap = {};
           const requestCookies: IParameterMap = {};
           const requestQuery: IParameterMap = {};
           parameters.forEach(parameter => {
             const { in: keyIn, name, ...otherParams } = parameter as ParameterObject;
             switch (keyIn) {
+              case 'path':
+                requestPath[name] = otherParams;
+                break;
               case 'query':
                 requestQuery[name] = otherParams;
                 break;
@@ -285,13 +289,14 @@ export async function gen(options: {
                 break;
             }
           });
+          const requestPathCode = await getCodeFromParameters(requestPath, 'Path', true);
+          const requestQueryCode = await getCodeFromParameters(requestQuery, 'Query', true);
+          const requestCookieCode = await getCodeFromParameters(requestCookies, 'Cookie', true);
           const requestHeaderCode = await getCodeFromParameters(
             requestHeaders,
             'RequestHeader',
             true,
           );
-          const requestQueryCode = await getCodeFromParameters(requestQuery, 'Query', true);
-          const requestCookieCode = await getCodeFromParameters(requestCookies, 'Cookie', true);
 
           // request body
           const {
@@ -360,6 +365,7 @@ export async function gen(options: {
 
           const requestFuncTypeCode = `
             export const request = async (options: {
+              path?: Path;
               query?: Query;
               body${requestBodyRequired ? '' : '?'}: ${
             requestBodyTypeNames.length > 0 ? requestBodyTypeNames.join('|') : 'any'
@@ -369,20 +375,37 @@ export async function gen(options: {
             }, otherOptions?: any): Promise<{ body: ${
               responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'
             } }> =>  {
-              return fetchImpl({...options, ...otherOptions, url: '${baseUrl}${urlPath}', method: '${method.toLowerCase()}'});
+              let resolvedUrl = '${baseUrl}${urlPath}';
+              ${
+                _.isEmpty(requestPath)
+                  ? ''
+                  : `if (!!options.path) {
+                Object.keys(options.path).map(key => {
+                  const regex = new RegExp(\`({(\${key})})|(:(\${key}))\`, 'g');
+                  resolvedUrl = url.replace(regex, options.path[key]);
+                });
+              }`
+              }
+              return fetchImpl({
+                url: resolvedUrl, 
+                method: '${method.toLowerCase()}',
+                ...options, 
+                ...otherOptions 
+              });
             };
           `;
 
           const requestUrl = `export const url = \`${baseUrl}${urlPath}\``;
 
           let exportObj: { [key: string]: string } = {
+            requestUrl,
+            requestPathCode,
             requestQueryCode,
             requestHeaderCode,
             requestCookieCode,
             requestBodyCode,
             responsesCode,
             requestFuncTypeCode,
-            requestUrl,
           };
 
           if (options.handlePostScript) {
@@ -416,7 +439,7 @@ export async function gen(options: {
             return exp
               .replace(/ interface | type = /g, ' class ')
               .replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}')
-              .replace(/ type ([^=]+) = /g, ' class $1 ');
+              .replace(/ type ([^=]+) = {/g, ' class $1 {');
           });
           pathsMap[namespaceName] = {
             summary,
