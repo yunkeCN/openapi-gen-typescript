@@ -465,7 +465,7 @@ export async function gen(options: {
       if (Object.keys(currMap).length > 0) {
         const currTagNameDir = `${outputDir}/${currTag.name}`;
         await mkdirp(currTagNameDir);
-        const tagIndex: string[] = [];
+        const namespaceNameArr: string[] = [];
         Object.keys(currMap).map((namespaceName: string) => {
           const { summary, code } = currMap[namespaceName];
           const pathCode = [
@@ -479,14 +479,17 @@ export async function gen(options: {
             schemasClassCode.length > 0 ? `import * as schemas from '../schemas';\n` : '\n',
             code,
           ].join('\n');
-          tagIndex.push(`export * as ${namespaceName} from './${namespaceName}';`);
+          namespaceNameArr.push(namespaceName);
           fs.writeFileSync(`${currTagNameDir}/${namespaceName}.ts`, format(pathCode));
         });
         const tagCode = [
           `/**
           * @description ${currTag.description}
           */\n`,
-          ...tagIndex,
+          ...namespaceNameArr.map(key => `import * as ${key} from './${key}';`),
+          `\nexport {
+            ${namespaceNameArr.join(',\n')}
+          }`,
         ].join('\n');
 
         fs.writeFileSync(`${currTagNameDir}/index.ts`, format(tagCode));
