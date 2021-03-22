@@ -3,122 +3,118 @@ import { gen } from '../src';
 
 (async function () {
   await gen({
-    // url: 'https://petstore.swagger.io/v2/swagger.json',
-    // url:
-    // 'https://api.myscrm.cn/api/interface/swagger/6109/master?token=997b2bee28286319ca91&status=all',
-    // url:
-    //   'https://api-test.myscrm.cn/api/interface/swagger/1484/dev-f-20200814-lsm?token=16819cae93432fcce9cf&status=all',
-    // path: path.join(__dirname, "./petstore.json"),
-    object: {
-      swagger: '2.0',
-      info: {
-        description: '',
-        title: 'bff-example',
-        version: '',
-      },
-      basePath: '',
-      tags: [
-        {
-          name: '用户权限',
-          description: '用户权限',
-        },
-      ],
-      paths: {
-        '/user/auth': {
-          post: {
-            operationId: 'postuserauth',
-            tags: ['用户权限'],
-            summary: '用户权限查询',
-            description: '# 1',
-            consumes: ['application/json'],
-            produces: ['application/json'],
-            parameters: [
-              {
-                in: 'body',
-                name: 'body',
-                required: true,
-                schema: {
-                  type: 'object',
-                  title: 'empty object',
-                  properties: {
-                    user_id: {
-                      type: 'string',
-                    },
-                  },
-                },
-              },
-              {
-                name: 'Content-Type',
-                description: '',
-                in: 'header',
-                type: 'string',
-                default: 'application/json',
-                required: false,
-              },
-              {
-                name: 'cookie',
-                description: '',
-                in: 'header',
-                type: 'string',
-                default: '',
-                required: true,
-              },
-            ],
-            responses: {
-              '200': {
-                description: '',
-                schema: {
-                  type: 'object',
-                  title: 'empty object',
-                  properties: {
-                    code: {
-                      type: 'number',
-                    },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        id: {
-                          type: 'number',
-                        },
-                        user_id: {
-                          type: 'number',
-                        },
-                        insert: {
-                          type: 'string',
-                        },
-                        delete: {
-                          $ref: '#/definitions/ref1',
-                        },
-                        update: {
-                          type: 'string',
-                        },
-                        select: {
-                          type: 'string',
-                        },
-                        create_time: {
-                          type: 'string',
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      definitions: {
-        ref1: {
-          type: 'object',
-          title: 'empty object',
-          properties: {
-            field_1: {
-              type: 'string',
-            },
-          },
-        },
-      },
-    },
+    url: 'https://petstore.swagger.io/v2/swagger.json',
+    // path: path.join(__dirname, './petstore.json'),
+    // object: {
+    //   swagger: '2.0',
+    //   info: {
+    //     description: '',
+    //     title: 'bff-example',
+    //     version: '',
+    //   },
+    //   basePath: '',
+    //   tags: [
+    //     {
+    //       name: 'auth',
+    //       description: 'auth',
+    //     },
+    //   ],
+    //   paths: {
+    //     '/user/auth': {
+    //       post: {
+    //         operationId: 'postuserauth',
+    //         tags: ['auth'],
+    //         summary: 'auth search',
+    //         description: '# 1',
+    //         consumes: ['application/json'],
+    //         produces: ['application/json'],
+    //         parameters: [
+    //           {
+    //             in: 'body',
+    //             name: 'body',
+    //             required: true,
+    //             schema: {
+    //               type: 'object',
+    //               title: 'empty object',
+    //               properties: {
+    //                 user_id: {
+    //                   type: 'string',
+    //                 },
+    //               },
+    //             },
+    //           },
+    //           {
+    //             name: 'Content-Type',
+    //             description: '',
+    //             in: 'header',
+    //             type: 'string',
+    //             default: 'application/json',
+    //             required: false,
+    //           },
+    //           {
+    //             name: 'cookie',
+    //             description: '',
+    //             in: 'header',
+    //             type: 'string',
+    //             default: '',
+    //             required: true,
+    //           },
+    //         ],
+    //         responses: {
+    //           '200': {
+    //             description: '',
+    //             schema: {
+    //               type: 'object',
+    //               title: 'empty object',
+    //               properties: {
+    //                 code: {
+    //                   type: 'number',
+    //                 },
+    //                 data: {
+    //                   type: 'object',
+    //                   properties: {
+    //                     id: {
+    //                       type: 'number',
+    //                     },
+    //                     user_id: {
+    //                       type: 'number',
+    //                     },
+    //                     insert: {
+    //                       type: 'string',
+    //                     },
+    //                     delete: {
+    //                       $ref: '#/definitions/ref1',
+    //                     },
+    //                     update: {
+    //                       type: 'string',
+    //                     },
+    //                     select: {
+    //                       type: 'string',
+    //                     },
+    //                     create_time: {
+    //                       type: 'string',
+    //                     },
+    //                   },
+    //                 },
+    //               },
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    //   definitions: {
+    //     ref1: {
+    //       type: 'object',
+    //       title: 'empty object',
+    //       properties: {
+    //         field_1: {
+    //           type: 'string',
+    //         },
+    //       },
+    //     },
+    //   },
+    // },
     version: '2',
     outputDir: `${__dirname}/gen`,
     handlePostScript: obj => {

@@ -183,13 +183,13 @@ export async function gen(options: {
   } = options;
 
   let openApiData: OpenAPIV3.Document;
-  if (url || filePath) {
+  if (url || filePath || object) {
     const { dereference, parse } = swaggerParser;
-    let params: any = url || filePath;
+    // convertUrl响应速度很慢，改为使用convertObj
+    const { convertObj, convertFile } = swagger2openapi;
+    let params: any;
+    let openapi: any;
     if (version === '2') {
-      // convertUrl响应速度很慢，改为使用convertObj
-      const { convertObj, convertFile } = swagger2openapi;
-      const openapiConvert = url ? convertObj : convertFile;
       if (url) {
         try {
           const result = await Axios.get(url);
@@ -200,18 +200,28 @@ export async function gen(options: {
         } catch (e) {
           console.error('e :>> ', e.message);
         }
+        openapi = await convertObj(params, {
+          patch: true,
+        });
       }
-      const openapi = await openapiConvert(params, {
-        patch: true,
-      });
+      if (filePath) {
+        params = filePath;
+        openapi = await convertFile(params, {
+          patch: true,
+        });
+      }
+      if (object) {
+        params = object;
+        openapi = await convertObj(params, {
+          patch: true,
+        });
+      }
       openApiData = openapi.openapi || (await dereference(openapi.openapi));
     } else {
       openApiData = (await parse(params)) as OpenAPIV3.Document;
     }
-  } else if (!object) {
-    throw 'option: url or object must be specified one';
   } else {
-    openApiData = object as OpenAPIV3.Document;
+    throw 'option: url or filePath or object must be specified one';
   }
 
   let baseUrl = '';
