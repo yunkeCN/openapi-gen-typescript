@@ -436,10 +436,13 @@ export async function gen(options: {
           );
 
           const generateClassArr = exportArr.map(exp => {
-            return exp
-              .replace(/ interface | type = /g, ' class ')
-              .replace(/ type ([^=]+) = components.([a-zA-Z.]+)[;{}]?/g, ' class $1 extends $2 {}')
-              .replace(/ type ([^=]+) = {/g, ' class $1 {');
+            const exp1 = exp.replace(/ interface | type = /g, ' class ');
+            const exp2 = exp1.replace(
+              / type ([^=]+) = components.([a-zA-Z._]+)[;{}]?/g,
+              ' class $1 extends $2 {}',
+            );
+            const exp3 = exp2.replace(/ type ([^=]+) = {/g, ' class $1 {');
+            return exp3;
           });
           pathsMap[namespaceName] = {
             summary,
@@ -475,7 +478,9 @@ export async function gen(options: {
             */\n`,
             `import fetchImpl from '${path
               .relative(currTagNameDir, fetchModuleFile)
-              .replace(/\.ts$/, '')}';`,
+              .replace(/\.ts$/, '')}';`
+              .split(path.sep)
+              .join('/'),
             schemasClassCode.length > 0 ? `import * as schemas from '../schemas';\n` : '\n',
             code,
           ].join('\n');
