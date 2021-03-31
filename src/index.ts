@@ -448,11 +448,12 @@ export async function gen(options: {
           const generateClassArr = exportArr.map(exp => {
             const exp1 = exp.replace(/ interface | type = /g, ' class ');
             const exp2 = exp1.replace(
-              / type ([^=]+) = components.([a-zA-Z._]+)[;{}]?/g,
+              / type ([^=]+) = components.([a-zA-Z0-9._]+)[;{}]?/g,
               ' class $1 extends $2 {}',
             );
             const exp3 = exp2.replace(/ type ([^=]+) = {/g, ' class $1 {');
-            return exp3;
+            const exp4 = exp3.replace(/components.schemas/g, 'schemas');
+            return exp4;
           });
           pathsMap[namespaceName] = {
             summary,

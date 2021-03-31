@@ -9,6 +9,7 @@ export const DEFAULT_OPTIONS: Options = {
   singleQuote: false,
   tabWidth: 2,
   trailingComma: 'none',
+  quoteProps: 'preserve',
   useTabs: false,
 };
 
