@@ -1,7 +1,8 @@
 import { OpenAPIV3 } from 'openapi-types';
 import { IPathMap } from './typeDefinitions';
 
-export function getTagWithPaths(allTags: OpenAPIV3.TagObject[] | undefined, pathsMap: IPathMap) {
+export function getTagWithPaths(openApiData: OpenAPIV3.Document, pathsMap: IPathMap) {
+  const { tags: allTags } = openApiData;
   const commonTag: OpenAPIV3.TagObject = {
     name: 'common',
     description: 'common tag',
