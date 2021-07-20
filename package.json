@@ -24,7 +24,6 @@
     "@apidevtools/swagger-parser": "^10.0.2",
     "@types/fs-extra": "^9.0.12",
     "camelcase": "^6.1.0",
-    "fs-extra": "^10.0.0",
     "lodash": "^4.17.21",
     "mkdirp": "^1.0.4",
     "openapi-types": "^7.0.1",

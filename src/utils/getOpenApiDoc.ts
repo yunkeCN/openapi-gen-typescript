@@ -2,7 +2,7 @@
 import * as swagger2openapi from 'swagger2openapi';
 import * as swaggerParser from '@apidevtools/swagger-parser';
 import { OpenAPIV3 } from 'openapi-types';
-import { IGenParmas } from './typeDefinitions';
+import { IGenParmas } from './type';
 import Axios from 'axios';
 
 // 生成openapi的Doc对象

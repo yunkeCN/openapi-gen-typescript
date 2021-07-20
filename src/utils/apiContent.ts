@@ -1,30 +1,25 @@
 import * as camelcase from 'camelcase';
+import { Options } from 'camelcase';
 import * as _ from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
 import { AllMethods, SortList } from '../constants';
 import { getBaseUrl } from './getBaseUrl';
-import { getCodeFromContent, getCodeFromParameters, getContentFromComponents } from './getCode';
-import {
-  ContentObject,
-  IGenParmas,
-  IParameterMap,
-  IPathMap,
-  IPathMapContent,
-} from './typeDefinitions';
+import { getCodeFromContent, getContentFromComponents } from './genCode';
+import { getReqBody, getReqParams } from './getInterfaceInfo';
+import { ContentObject, IGenParmas, IPathMap } from './type';
 import PathItemObject = OpenAPIV3.PathItemObject;
 import OperationObject = OpenAPIV3.OperationObject;
 import ResponseObject = OpenAPIV3.ResponseObject;
 import ReferenceObject = OpenAPIV3.ReferenceObject;
 import RequestBodyObject = OpenAPIV3.RequestBodyObject;
-import ParameterObject = OpenAPIV3.ParameterObject;
 
 interface IApiContext {
   openApiData: OpenAPIV3.Document;
   options: IGenParmas;
 }
 
-function getCamelcase(urlPath: string, arg1: { pascalCase: boolean }) {
-  throw new Error('Function not implemented.');
+function getCamelcase(urlPath: string, options?: Options): string {
+  return camelcase(urlPath.split('/').join('_'), options);
 }
 
 export const getApiContent = async (
@@ -32,13 +27,11 @@ export const getApiContent = async (
 ): Promise<{
   pathsCode: string[];
   pathsMap: IPathMap;
-  pathContentList: IPathMapContent[];
 }> => {
   const { openApiData, options } = props;
   const { paths } = openApiData;
   const pathsCode: string[] = [];
   const pathsMap: IPathMap = {};
-  const pathContentList: IPathMapContent[] = [];
   await Promise.all(
     Object.keys(paths).map(async urlPath => {
       const pathsObject: PathItemObject = paths[urlPath] as any;
@@ -66,64 +59,22 @@ export const getApiContent = async (
           });
 
           // request parameter
-          const requestPath: IParameterMap = {};
-          const requestHeaders: IParameterMap = {};
-          const requestCookies: IParameterMap = {};
-          const requestQuery: IParameterMap = {};
-          parameters.forEach(parameter => {
-            const { in: keyIn, name, ...otherParams } = parameter as ParameterObject;
-            switch (keyIn) {
-              case 'path':
-                requestPath[name] = otherParams;
-                break;
-              case 'query':
-                requestQuery[name] = otherParams;
-                break;
-              case 'cookie':
-                requestCookies[name] = otherParams;
-                break;
-              case 'header':
-                if (['CONTENT-TYPE', 'COOKIE'].indexOf(name.toUpperCase()) === -1) {
-                  requestHeaders[name] = otherParams;
-                }
-                break;
-            }
-          });
-          const requestPathCode = await getCodeFromParameters(requestPath, 'Path', true);
-          const requestQueryCode = await getCodeFromParameters(requestQuery, 'Query', true);
-          const requestCookieCode = await getCodeFromParameters(requestCookies, 'Cookie', true);
-          const requestHeaderCode = await getCodeFromParameters(
-            requestHeaders,
-            'RequestHeader',
-            true,
-          );
+          const {
+            requestCookieCode,
+            requestHeaderCode,
+            requestPathCode,
+            requestQueryCode,
+            requestPath,
+          } = await getReqParams({ parameters });
 
-          // request body
           const {
             $ref: requestRef,
-            content,
             required: requestBodyRequired,
-            description: requestBodyDescription,
           }: ReferenceObject & RequestBodyObject = requestBody as any;
 
-          let requestBodyCode = '';
+          // request body
+          const requestBodyCode = await getReqBody({ requestBody, openApiData });
           const requestBodyTypeNames: string[] = [];
-
-          if (requestRef) {
-            requestBodyCode = await getContentFromComponents(
-              openApiData,
-              requestRef,
-              `Body`,
-              requestBodyTypeNames,
-            );
-          } else {
-            requestBodyCode = await getCodeFromContent(
-              content,
-              `Body`,
-              requestBodyDescription,
-              requestBodyTypeNames,
-            );
-          }
 
           // response
           const responseTypeNames: string[] = [];
@@ -252,17 +203,10 @@ export const getApiContent = async (
             code: generateClassArr.join('\n'),
             path: urlPath,
           };
-
-          pathContentList.push({
-            summary,
-            tags: tags || [],
-            code: generateClassArr.join('\n'),
-            path: urlPath,
-          });
         }),
       );
       pathsCode.push(pathsTypesCode.join('\n'));
     }),
   );
-  return { pathsCode, pathsMap, pathContentList };
+  return { pathsCode, pathsMap };
 };

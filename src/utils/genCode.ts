@@ -3,7 +3,7 @@ import * as camelcase from 'camelcase';
 import * as _ from 'lodash';
 import { IJsonSchema, OpenAPIV3 } from 'openapi-types';
 import { transform } from '../schemaToTypes/transform';
-import { ContentObject, IParameterMap } from './typeDefinitions';
+import { ContentObject, IParameterMap } from './type';
 import ParameterBaseObject = OpenAPIV3.ParameterBaseObject;
 import MediaTypeObject = OpenAPIV3.MediaTypeObject;
 import ReferenceObject = OpenAPIV3.ReferenceObject;
@@ -40,7 +40,7 @@ export async function getCodeFromParameters(
   return `${exportKey ? 'export' : ''} interface ${name} {\n${bodyCode.join('\n')}\n}`;
 }
 
-function getCamelcase(urlPath: string, options?: Options): string {
+export function getCamelcase(urlPath: string, options?: Options): string {
   return camelcase(urlPath.split('/').join('_'), options);
 }
 

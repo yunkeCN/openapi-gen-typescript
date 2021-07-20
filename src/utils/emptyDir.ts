@@ -16,7 +16,6 @@ export function deleteFolderRecursive(filePath: string) {
     files = fs.readdirSync(filePath);
     files.forEach(function (file, index) {
       const curPath = path.join(filePath, file);
-      console.log(curPath);
       /**
        * fs.statSync同步读取文件夹文件，如果是文件夹，在重复触发函数
        */

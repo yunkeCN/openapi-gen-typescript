@@ -1,4 +1,6 @@
-export const AllMethods: string[] = ['get', 'post', 'options', 'put', 'delete', 'patch', 'head'];
+import { methods } from './utils/type';
+
+export const AllMethods: methods[] = ['get', 'post', 'options', 'put', 'delete', 'patch', 'head'];
 
 export const SortList = [
   'requestUrl',
