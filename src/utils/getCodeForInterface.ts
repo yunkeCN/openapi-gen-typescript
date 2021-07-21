@@ -4,7 +4,6 @@
 
 import * as camelcase from 'camelcase';
 import * as _ from 'lodash';
-import * as fs from 'fs';
 import { OpenAPIV3 } from 'openapi-types';
 import { SortList } from '../constants';
 import { getBaseUrl } from './getBaseUrl';
@@ -25,7 +24,7 @@ interface IProps {
   pathsTypesCode: string[];
 }
 
-export const getCodeFromInterface = async (props: IProps) => {
+export const getCodeForInterface = async (props: IProps) => {
   const { objectElement, method, urlPath, openApiData, options, pathsTypesCode } = props;
   const { operationId, parameters = [], requestBody = {}, responses } = objectElement;
 
@@ -139,8 +138,6 @@ export const getCodeFromInterface = async (props: IProps) => {
     responsesCode,
     requestFuncTypeCode,
   };
-
-  fs.writeFileSync(`${__dirname}/t1.ts`, requestFuncTypeCode);
 
   if (options.handlePostScript) {
     const result = await options.handlePostScript(objectElement, method);

@@ -1,5 +1,5 @@
-import { Options } from 'camelcase';
 import * as camelcase from 'camelcase';
+import { getCamelcase } from './genCode';
 import { GenPathMode, IHandelGenPathResult, IHandleGenPathProps } from './type';
 
 interface IGetGenPathProps {
@@ -19,11 +19,8 @@ type IGenPath = {
   method: IHandleGenPathProps['method'];
 };
 
-function getCamelcase(urlPath: string, options?: Options): string {
-  return camelcase(urlPath.split('/').join('_'), options);
-}
-
-export const getGenPath = (props: IGetGenPathProps): IHandelGenPathResult => {
+// 生成文件路径
+export const getFilePath = (props: IGetGenPathProps): IHandelGenPathResult => {
   const { handleGenPath, propForGen, genPathMode } = props;
   const { method, operationObject, path } = propForGen;
   let result: IHandelGenPathResult = {};

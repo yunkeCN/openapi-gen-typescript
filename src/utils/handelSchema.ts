@@ -1,13 +1,13 @@
-import camelcase = require('camelcase');
+import * as camelcase from 'camelcase';
 import { IJsonSchema, OpenAPIV3 } from 'openapi-types';
 import { transform } from '../schemaToTypes/transform';
 
-interface ISchema {
+interface IProps {
   pascalCase: boolean;
   openApiData: OpenAPIV3.Document;
 }
 
-export const handleSchema = (props: ISchema) => {
+export const handleSchema = (props: IProps) => {
   const { openApiData, pascalCase } = props;
   const { schemas } = openApiData.components || {};
   const schemasTypesCode: string[] = [];

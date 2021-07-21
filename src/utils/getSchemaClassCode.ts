@@ -2,12 +2,12 @@ import * as camelcase from 'camelcase';
 import { IJsonSchema, OpenAPIV3 } from 'openapi-types';
 import { transform } from '../schemaToTypes/transform';
 
-export interface IGetSchemaClassCode {
+interface IProps {
   openApiData: OpenAPIV3.Document;
   pascalCase?: boolean;
 }
 
-export const getSchemaClassCode = (props: IGetSchemaClassCode) => {
+export const getSchemaClassCode = (props: IProps) => {
   const schemasClassCode: string[] = [];
   const schemasTypesCode: string[] = [];
   const { openApiData, pascalCase } = props;

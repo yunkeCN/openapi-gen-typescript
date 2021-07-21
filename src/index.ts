@@ -8,7 +8,7 @@ import { IGenParmas } from './utils/type';
 import { deleteFolderRecursive } from './utils/emptyDir';
 import { getOpenApiDoc } from './utils/getOpenApiDoc';
 import { handleSchema } from './utils/handelSchema';
-import { genCodeArr } from './utils/getCodeFromPaths';
+import { genCodeArr } from './utils/genCodeArr';
 import { writeFileFromIFileCode } from './utils/fileStream';
 
 export async function gen(options: IGenParmas) {
@@ -18,8 +18,7 @@ export async function gen(options: IGenParmas) {
     pascalCase = true,
   } = options;
 
-  // 生成openApiData文档
-  let openApiData: OpenAPIV3.Document = await getOpenApiDoc(options);
+  const openApiData: OpenAPIV3.Document = await getOpenApiDoc(options);
 
   const { fileCodeList, pathsCode } = await genCodeArr({ openApiData, options });
 

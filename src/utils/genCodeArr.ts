@@ -4,8 +4,8 @@
 
 import { OpenAPIV3 } from 'openapi-types';
 import { AllMethods } from '../constants';
-import { getGenPath } from './genPathName';
-import { getCodeFromInterface } from './getCodeFromInterface';
+import { getFilePath } from './getFilePath';
+import { getCodeForInterface } from './getCodeForInterface';
 import { toHump } from './toHump';
 import { IGenParmas } from './type';
 import PathItemObject = OpenAPIV3.PathItemObject;
@@ -35,7 +35,7 @@ export const genCodeArr = async (
   const { genPathMode, handleGenPath } = options;
   await Promise.all(
     Object.keys(paths).map(async urlPath => {
-      const pathsObject: PathItemObject = paths[urlPath] as any;
+      const pathsObject: PathItemObject = paths[urlPath] as PathItemObject;
       const filterMethods = AllMethods.filter(method => !!(pathsObject as any)[method]);
       const pathsTypesCode: string[] = [];
       await Promise.all(
@@ -43,7 +43,7 @@ export const genCodeArr = async (
           const objectElement: OperationObject = (pathsObject as any)[method] as OperationObject;
           const { summary } = objectElement;
           // 生成单个接口的代码
-          const code = await getCodeFromInterface({
+          const code = await getCodeForInterface({
             options,
             openApiData,
             urlPath,
@@ -52,7 +52,7 @@ export const genCodeArr = async (
             pathsTypesCode,
           });
           // 生成单个接口的路径
-          const { dirName, fileName } = getGenPath({
+          const { dirName, fileName } = getFilePath({
             genPathMode,
             handleGenPath,
             propForGen: {
@@ -69,6 +69,8 @@ export const genCodeArr = async (
               fileName: toHump(fileName),
               summary,
             });
+          } else {
+            console.log(`${urlPath}-${method}接口没有生成符合规范的路径`);
           }
         }),
       );

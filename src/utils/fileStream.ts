@@ -2,9 +2,9 @@
 import * as mkdirp from 'mkdirp';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IFileCode } from './getCodeFromPaths';
+import { IFileCode } from './genCodeArr';
 import { getFileMap } from './getFileMap';
-import { format } from './format';
+import { formatCode } from './formatCode';
 import { NotModifyCode } from '../constants';
 import { toHump } from './toHump';
 
@@ -47,16 +47,16 @@ export const writeFileFromIFileCode = async (props: IProps) => {
           schemasClassCode.length > 0 ? `import * as schemas from '../schemas';\n` : '\n',
           el.code,
         ].join('\n');
-        fs.writeFileSync(`${outputDir}/${dirName}/${el.fileName}.ts`, format(pathCode));
+        fs.writeFileSync(`${outputDir}/${dirName}/${el.fileName}.ts`, formatCode(pathCode));
       });
       const tagCode = getTagCode(dirName, fileList);
-      fs.writeFileSync(`${outputDir}/${dirName}/index.ts`, format(tagCode));
+      fs.writeFileSync(`${outputDir}/${dirName}/index.ts`, formatCode(tagCode));
     }),
   );
 
   const typesCode = getTypeCode({ schemasTypesCode, pathsCode });
 
-  fs.writeFileSync(`${outputDir}/index.ts`, format(typesCode));
+  fs.writeFileSync(`${outputDir}/index.ts`, formatCode(typesCode));
 };
 
 const getTagCode = (dirName: string, fileCodeList: IFileCode[]): string => {

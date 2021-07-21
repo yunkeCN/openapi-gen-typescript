@@ -1,6 +1,6 @@
 import { format as prettify, Options } from 'prettier';
 
-export const DEFAULT_OPTIONS: Options = {
+const DEFAULT_OPTIONS: Options = {
   bracketSpacing: false,
   printWidth: 80,
   semi: true,
@@ -11,6 +11,6 @@ export const DEFAULT_OPTIONS: Options = {
   useTabs: false,
 };
 
-export function format(code: string, options: Options = DEFAULT_OPTIONS): string {
+export function formatCode(code: string, options: Options = DEFAULT_OPTIONS): string {
   return prettify(code, { parser: 'typescript', ...options });
 }

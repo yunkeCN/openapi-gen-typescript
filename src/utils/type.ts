@@ -34,10 +34,6 @@ export interface IPathMapContent {
   path: string;
 }
 
-export interface IPathMap {
-  [key: string]: IPathMapContent;
-}
-
 export type IHandelGenPathResult = {
   dirName?: string;
   fileName?: string;

@@ -1,4 +1,4 @@
-import { IFileCode } from './getCodeFromPaths';
+import { IFileCode } from './genCodeArr';
 
 export type IFileMap = {
   [key: string]: IFileCode[];
