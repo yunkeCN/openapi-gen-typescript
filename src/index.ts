@@ -385,7 +385,7 @@ export async function gen(options: {
             }, otherOptions?: any): Promise<{ body: ${
               responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'
             } }> =>  {
-              let resolvedUrl = '${baseUrl}${urlPath}';
+              let resolvedUrl = '${(baseUrl + urlPath).replace('//', '/')}';
               ${
                 _.isEmpty(requestPath)
                   ? ''
@@ -405,7 +405,7 @@ export async function gen(options: {
             };
           `;
 
-          const requestUrl = `export const url = \`${baseUrl}${urlPath}\``;
+          const requestUrl = `export const url = \`${(baseUrl + urlPath).replace('//', '/')}\``;
 
           let exportObj: { [key: string]: string } = {
             requestUrl,
