@@ -54,3 +54,14 @@ export interface IGenParmas {
   handlePostScript?: (obj: OperationObject, method?: string) => PostScriptReturnType;
   handleGenPath?: (props: IHandleGenPathProps) => IHandelGenPathResult;
 }
+
+export interface IFileCode {
+  code: string;
+  dirName?: string;
+  fileName?: string;
+  summary?: string;
+}
+
+export type IFileMap = {
+  [key: string]: IFileCode[];
+};

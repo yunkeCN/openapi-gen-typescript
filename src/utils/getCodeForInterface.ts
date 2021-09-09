@@ -6,7 +6,7 @@ import * as camelcase from 'camelcase';
 import * as _ from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
 import { SortList } from '../constants';
-import { getBaseUrl } from './getBaseUrl';
+import { getBaseUrl } from './format';
 import { getCamelcase, getCodeFromContent, getContentFromComponents } from './genCode';
 import { getReqBody, getReqParams } from './getInterfaceInfo';
 import { ContentObject, IGenParmas } from './type';
@@ -106,7 +106,7 @@ export const getCodeForInterface = async (props: IProps) => {
               }, otherOptions?: any): Promise<{ body: ${
                 responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'
               } }> =>  {
-                let resolvedUrl = '${getBaseUrl(openApiData)}${urlPath}';
+                let resolvedUrl = '${(getBaseUrl(openApiData) + urlPath).replace('//', '/')}';
                 ${
                   _.isEmpty(requestPath)
                     ? ''
@@ -126,7 +126,10 @@ export const getCodeForInterface = async (props: IProps) => {
               };
             `;
 
-  const requestUrl = `export const url = \`${getBaseUrl(openApiData)}${urlPath}\``;
+  const requestUrl = `export const url = \`${(getBaseUrl(openApiData) + urlPath).replace(
+    '//',
+    '/',
+  )}\``;
 
   let exportObj: { [key: string]: string } = {
     requestUrl,

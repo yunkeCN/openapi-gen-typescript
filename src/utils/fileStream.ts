@@ -3,8 +3,7 @@ import * as mkdirp from 'mkdirp';
 import * as fs from 'fs';
 import * as path from 'path';
 import { IFileCode } from './genCodeArr';
-import { getFileMap } from './getFileMap';
-import { formatCode } from './formatCode';
+import { formatCode, getFileMap } from './format';
 import { NotModifyCode } from '../constants';
 import { toHump } from './toHump';
 
@@ -57,6 +56,11 @@ export const writeFileFromIFileCode = async (props: IProps) => {
   const typesCode = getTypeCode({ schemasTypesCode, pathsCode });
 
   fs.writeFileSync(`${outputDir}/index.ts`, formatCode(typesCode));
+
+  if (schemasClassCode.length > 0) {
+    const schemasCode = [NotModifyCode, schemasClassCode.join('\n')].join('\n');
+    fs.writeFileSync(`${outputDir}/schemas.ts`, formatCode(schemasCode));
+  }
 };
 
 const getTagCode = (dirName: string, fileCodeList: IFileCode[]): string => {
