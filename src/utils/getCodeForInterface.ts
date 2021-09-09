@@ -6,9 +6,13 @@ import * as camelcase from 'camelcase';
 import * as _ from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
 import { SortList } from '../constants';
-import { getBaseUrl } from './format';
-import { getCamelcase, getCodeFromContent, getContentFromComponents } from './genCode';
-import { getReqBody, getReqParams } from './getInterfaceInfo';
+import { getBaseUrl, getCamelcase } from './format';
+import {
+  genCodeFromContent,
+  genContentFromComponents,
+  getReqBody,
+  getReqParams,
+} from './getInterfaceInfo';
 import { ContentObject, IGenParmas } from './type';
 import OperationObject = OpenAPIV3.OperationObject;
 import ResponseObject = OpenAPIV3.ResponseObject;
@@ -24,7 +28,8 @@ interface IProps {
   pathsTypesCode: string[];
 }
 
-export const getCodeForInterface = async (props: IProps) => {
+// 生成单个接口的代码
+export const genCodeForInterface = async (props: IProps) => {
   const { objectElement, method, urlPath, openApiData, options, pathsTypesCode } = props;
   const { operationId, parameters = [], requestBody = {}, responses } = objectElement;
 
@@ -71,7 +76,7 @@ export const getCodeForInterface = async (props: IProps) => {
           pascalCase: true,
         })}`;
         if ($ref) {
-          const responseCode = await getContentFromComponents(
+          const responseCode = await genContentFromComponents(
             openApiData,
             requestRef,
             typeNamePrefix,
@@ -81,7 +86,7 @@ export const getCodeForInterface = async (props: IProps) => {
           return responseCode;
         } else {
           // response
-          const responseCode = await getCodeFromContent(
+          const responseCode = await genCodeFromContent(
             content as ContentObject,
             typeNamePrefix,
             description,

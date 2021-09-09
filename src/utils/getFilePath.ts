@@ -1,5 +1,5 @@
 import * as camelcase from 'camelcase';
-import { getCamelcase } from './genCode';
+import { getCamelcase } from './format';
 import { IHandelGenPathResult, IHandleGenPathProps } from './type';
 
 interface IGetGenPathProps {

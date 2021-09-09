@@ -65,3 +65,17 @@ export interface IFileCode {
 export type IFileMap = {
   [key: string]: IFileCode[];
 };
+
+export interface IGetReqParams {
+  parameters: (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[];
+}
+
+export interface IGetReqBody {
+  requestBody: any;
+  openApiData: OpenAPIV3.Document<{}>;
+}
+
+export interface IHandleSchema {
+  pascalCase: boolean;
+  openApiData: OpenAPIV3.Document;
+}

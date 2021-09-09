@@ -1,3 +1,5 @@
+import * as camelcase from 'camelcase';
+import { Options as IOptions } from 'camelcase';
 import { OpenAPIV3 } from 'openapi-types';
 import { format as prettify, Options } from 'prettier';
 import { IFileCode, IFileMap } from './type';
@@ -13,6 +15,7 @@ const DEFAULT_OPTIONS: Options = {
   useTabs: false,
 };
 
+// 格式化代码
 export function formatCode(code: string, options: Options = DEFAULT_OPTIONS): string {
   return prettify(code, { parser: 'typescript', ...options });
 }
@@ -38,3 +41,13 @@ export const getFileMap = (list: IFileCode[]) => {
   });
   return map;
 };
+
+export const toHump = (name: string) => {
+  return name.replace(/\-(\w)/g, function (all, letter) {
+    return letter.toUpperCase();
+  });
+};
+
+export function getCamelcase(urlPath: string, options?: IOptions): string {
+  return camelcase(urlPath.split('/').join('_'), options);
+}

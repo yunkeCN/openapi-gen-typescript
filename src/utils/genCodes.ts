@@ -5,25 +5,19 @@
 import { OpenAPIV3 } from 'openapi-types';
 import { AllMethods } from '../constants';
 import { getFilePath } from './getFilePath';
-import { getCodeForInterface } from './getCodeForInterface';
-import { toHump } from './toHump';
-import { IGenParmas } from './type';
+import { genCodeForInterface } from './getCodeForInterface';
+import { IFileCode, IGenParmas } from './type';
+import { toHump } from './format';
+
 import PathItemObject = OpenAPIV3.PathItemObject;
 import OperationObject = OpenAPIV3.OperationObject;
-
-export interface IFileCode {
-  code: string;
-  dirName?: string;
-  fileName?: string;
-  summary?: string;
-}
 
 interface IProps {
   openApiData: OpenAPIV3.Document;
   options: IGenParmas;
 }
 
-export const genCodeArr = async (
+export const genCodes = async (
   props: IProps,
 ): Promise<{ fileCodeList: Array<IFileCode>; pathsCode: string[] }> => {
   const result: { fileCodeList: IFileCode[]; pathsCode: string[] } = {
@@ -43,7 +37,7 @@ export const genCodeArr = async (
           const objectElement: OperationObject = (pathsObject as any)[method] as OperationObject;
           const { summary } = objectElement;
           // 生成单个接口的代码
-          const code = await getCodeForInterface({
+          const code = await genCodeForInterface({
             options,
             openApiData,
             urlPath,
@@ -69,7 +63,7 @@ export const genCodeArr = async (
               summary,
             });
           } else {
-            console.log(`${urlPath}-${method}接口没有生成符合规范的路径`);
+            throw new Error(`${urlPath}-${method}接口没有返回符合规范的路径`);
           }
         }),
       );

@@ -5,12 +5,10 @@ import * as mkdirp from 'mkdirp';
 import { OpenAPIV3 } from 'openapi-types';
 import * as _ from 'lodash';
 import { IGenParmas } from './utils/type';
-import { deleteFolderRecursive } from './utils/emptyDir';
-import { getOpenApiDoc } from './utils/getOpenApiDoc';
-import { handleSchema } from './utils/handelSchema';
-import { genCodeArr } from './utils/genCodeArr';
-import { writeFileFromIFileCode } from './utils/fileStream';
+import { genCodes } from './utils/genCodes';
+import { deleteFolderRecursive, writeFileFromIFileCode } from './utils/fileStream';
 import { genPaths, genTags } from './utils/getFilePath';
+import { getOpenApiDoc, handleSchema } from './utils/getInterfaceInfo';
 
 export async function gen(options: IGenParmas) {
   const {
@@ -21,7 +19,7 @@ export async function gen(options: IGenParmas) {
 
   const openApiData: OpenAPIV3.Document = await getOpenApiDoc(options);
 
-  const { fileCodeList, pathsCode } = await genCodeArr({ openApiData, options });
+  const { fileCodeList, pathsCode } = await genCodes({ openApiData, options });
 
   const { schemasClassCode, schemasTypesCode } = handleSchema({ pascalCase, openApiData });
 
