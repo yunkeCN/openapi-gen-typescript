@@ -32,7 +32,7 @@ export const genCodeArr = async (
   };
   const { openApiData, options } = props;
   const { paths, info } = openApiData;
-  const { genPathMode, handleGenPath } = options;
+  const { handleGenPath } = options;
   await Promise.all(
     Object.keys(paths).map(async urlPath => {
       const pathsObject: PathItemObject = paths[urlPath] as PathItemObject;
@@ -53,7 +53,6 @@ export const genCodeArr = async (
           });
           // 生成单个接口的路径
           const { dirName, fileName } = getFilePath({
-            genPathMode,
             handleGenPath,
             propForGen: {
               operationObject: objectElement,

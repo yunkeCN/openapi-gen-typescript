@@ -4,11 +4,6 @@ import MediaTypeObject = OpenAPIV3.MediaTypeObject;
 import ParameterBaseObject = OpenAPIV3.ParameterBaseObject;
 import OperationObject = OpenAPIV3.OperationObject;
 
-export enum GenPathMode {
-  Tags = 'tags',
-  Paths = 'paths',
-}
-
 export type methods = 'tags' | 'post' | 'options' | 'put' | 'delete' | 'patch' | 'head' | 'get';
 
 export type ContentObject = {
@@ -37,7 +32,6 @@ export interface IPathMapContent {
 export type IHandelGenPathResult = {
   dirName?: string;
   fileName?: string;
-  isGenPathMode?: GenPathMode;
 };
 
 export interface IHandleGenPathProps {
@@ -58,6 +52,5 @@ export interface IGenParmas {
   fetchModuleFile?: string;
   pascalCase?: boolean;
   handlePostScript?: (obj: OperationObject, method?: string) => PostScriptReturnType;
-  genPathMode?: GenPathMode;
   handleGenPath?: (props: IHandleGenPathProps) => IHandelGenPathResult;
 }

@@ -1,9 +1,8 @@
 import * as camelcase from 'camelcase';
 import { getCamelcase } from './genCode';
-import { GenPathMode, IHandelGenPathResult, IHandleGenPathProps } from './type';
+import { IHandelGenPathResult, IHandleGenPathProps } from './type';
 
 interface IGetGenPathProps {
-  genPathMode?: GenPathMode;
   handleGenPath?: (props: IHandleGenPathProps) => IHandelGenPathResult;
   propForGen: IHandleGenPathProps;
 }
@@ -21,26 +20,18 @@ type IGenPath = {
 
 // 生成文件路径
 export const getFilePath = (props: IGetGenPathProps): IHandelGenPathResult => {
-  const { handleGenPath, propForGen, genPathMode } = props;
+  const { handleGenPath, propForGen } = props;
   const { method, operationObject, path } = propForGen;
   let result: IHandelGenPathResult = {};
   if (handleGenPath) {
     result = handleGenPath(propForGen);
-    if (result.isGenPathMode === GenPathMode.Tags) {
-      result = genTags({ method, operationObject, path });
-    } else if (result.isGenPathMode === GenPathMode.Paths) {
-      result = genPaths({ path, method });
-    }
     return result;
-  }
-  if (genPathMode === GenPathMode.Paths) {
-    return genPaths({ path, method });
   }
   return genTags({ method, operationObject, path });
 };
 
 // 以tags方式生成路径
-const genTags = (props: ITagsGenPathProp): IHandelGenPathResult => {
+export const genTags = (props: ITagsGenPathProp): IHandelGenPathResult => {
   const { operationObject, method, path } = props;
   const { operationId, tags } = operationObject;
   const dirName = tags?.[0];
@@ -56,7 +47,7 @@ const genTags = (props: ITagsGenPathProp): IHandelGenPathResult => {
 };
 
 // 以path方式生成路径
-const genPaths = (props: IGenPath): IHandelGenPathResult => {
+export const genPaths = (props: IGenPath): IHandelGenPathResult => {
   const { path } = props;
   const pathArr = path.split('/');
   const dirName = pathArr.slice(0, -1).join('/');

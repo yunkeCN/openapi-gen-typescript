@@ -10,6 +10,7 @@ import { getOpenApiDoc } from './utils/getOpenApiDoc';
 import { handleSchema } from './utils/handelSchema';
 import { genCodeArr } from './utils/genCodeArr';
 import { writeFileFromIFileCode } from './utils/fileStream';
+import { genPaths, genTags } from './utils/getFilePath';
 
 export async function gen(options: IGenParmas) {
   const {
@@ -37,3 +38,7 @@ export async function gen(options: IGenParmas) {
 
   console.info(`Generate code successful in directory: ${outputDir}`);
 }
+
+export const genDirWithPaths = genPaths;
+
+export const genDirWithTags = genTags;
