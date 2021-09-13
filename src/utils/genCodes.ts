@@ -63,7 +63,7 @@ export const genCodes = async (
               summary,
             });
           } else {
-            throw new Error(`${urlPath}-${method}接口没有返回符合规范的路径`);
+            console.log(`${urlPath}-${method}接口没有返回符合规范的路径`);
           }
         }),
       );

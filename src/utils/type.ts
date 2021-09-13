@@ -79,3 +79,19 @@ export interface IHandleSchema {
   pascalCase: boolean;
   openApiData: OpenAPIV3.Document;
 }
+
+export interface IGetFilePathProps {
+  handleGenPath?: (props: IHandleGenPathProps) => IHandelGenPathResult;
+  propForGen: IHandleGenPathProps;
+}
+
+export type ITagsGenProp = {
+  operationObject: IHandleGenPathProps['operationObject'];
+  method: IHandleGenPathProps['method'];
+  path: IHandleGenPathProps['path'];
+};
+
+export type IPathsGenProp = {
+  path: IHandleGenPathProps['path'];
+  method: IHandleGenPathProps['method'];
+};

@@ -51,3 +51,13 @@ export const toHump = (name: string) => {
 export function getCamelcase(urlPath: string, options?: IOptions): string {
   return camelcase(urlPath.split('/').join('_'), options);
 }
+
+export const pathSplicing = (baseUrl: string, urlPath: string): string => {
+  let result = '';
+  if (baseUrl[baseUrl.length - 1] === '/' && urlPath[0] === '/') {
+    result = `${baseUrl.slice(0, -1)}${urlPath}`;
+  } else {
+    result = `${baseUrl}${urlPath}`;
+  }
+  return result;
+};
