@@ -22,8 +22,8 @@ export function formatCode(code: string, options: Options = DEFAULT_OPTIONS): st
 
 export const getBaseUrl = (openApiData: OpenAPIV3.Document) => {
   let baseUrl = '';
-  if (openApiData.servers) {
-    baseUrl = openApiData.servers[0].url;
+  if (openApiData.servers?.[0]?.url) {
+    baseUrl = openApiData.servers[0]?.url;
   }
   return baseUrl;
 };
