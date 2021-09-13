@@ -1,10 +1,10 @@
 import { gen } from '../src';
-// import * as path from 'path';
+import * as path from 'path';
 
 (async function () {
   await gen({
-    url: 'https://petstore.swagger.io/v2/swagger.json',
-    // path: path.join(__dirname, './petstore.json'),
+    // url: 'https://petstore.swagger.io/v2/swagger.json',
+    path: path.join(__dirname, './petstore.json'),
     // object: {
     //   swagger: '2.0',
     //   info: {
