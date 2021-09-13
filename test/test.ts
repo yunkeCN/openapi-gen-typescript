@@ -117,6 +117,7 @@ import * as path from 'path';
     // },
     version: '2',
     outputDir: `${__dirname}/gen`,
+
     handlePostScript: obj => {
       const { parameters = [] } = obj;
       const requestQuery: string[] = [];
