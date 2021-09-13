@@ -44,7 +44,7 @@ export interface IHandleGenPathProps {
 export interface IGenParmas {
   url?: string;
   path?: string;
-  version: string;
+  version?: string;
   object?: OpenAPI.Document;
   // dir of output files
   outputDir: string;
