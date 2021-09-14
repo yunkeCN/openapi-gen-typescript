@@ -19,7 +19,7 @@ interface IProps {
 
 export const genCodes = async (
   props: IProps,
-): Promise<{ fileCodeList: Array<IFileCode>; pathsCode: string[] }> => {
+): Promise<{ fileCodeList: IFileCode[]; pathsCode: string[] }> => {
   const result: { fileCodeList: IFileCode[]; pathsCode: string[] } = {
     fileCodeList: [],
     pathsCode: [],

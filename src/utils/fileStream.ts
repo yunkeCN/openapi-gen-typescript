@@ -33,6 +33,7 @@ export const writeFileFromIFileCode = async (props: IProps) => {
       await mkdirp(`${outputDir}/${dirName}`);
       fileList.forEach(el => {
         const pathCode = [
+          "/* tslint:disable */",
           `/**
           * @namespace ${el.fileName}
           * @summary ${el.summary}
