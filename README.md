@@ -23,3 +23,4 @@ gen({
 | fetchModuleFile  | Fetch impl file path                                 |
 | handleGenPath    | Processing generated paths                           |
 | handlePostScript | post script to customize the result                  |
+| handleGenPath    | custom generated file path                           |
