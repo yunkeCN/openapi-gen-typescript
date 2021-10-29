@@ -7,9 +7,10 @@ import { IFileCode, IFileMap } from './type';
 const DEFAULT_OPTIONS: Options = {
   printWidth: 80,
   semi: true,
-  singleQuote: true,
+  singleQuote: false,
   tabWidth: 2,
   trailingComma: 'none',
+  useTabs: false,
 };
 
 // 格式化代码

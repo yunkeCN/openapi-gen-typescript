@@ -3,7 +3,6 @@ import * as swagger2openapi from 'swagger2openapi';
 // @ts-ignore
 import * as mkdirp from 'mkdirp';
 import { OpenAPIV3 } from 'openapi-types';
-import * as _ from 'lodash';
 import { IGenParmas } from './utils/type';
 import { genCodes } from './utils/genCodes';
 import { deleteFolderRecursive, writeFileFromIFileCode } from './utils/fileStream';
