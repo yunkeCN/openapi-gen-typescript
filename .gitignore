@@ -3,3 +3,7 @@ node_modules
 test/gen
 dist
 .vscode
+mars.json
+test_mars.ts
+test_array.ts
+array-components.json
