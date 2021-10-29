@@ -14,13 +14,12 @@ gen({
 
 ## doc
 
-| Param            | Description                                          |
-| ---------------- | ---------------------------------------------------- |
-| url              | The url of fetch openapi or swagger data             |
-| path             | The filePath of fetch openapi or swagger data        |
-| object           | The docs of fetch openapi or swagger data            |
-| outputDir        | Dir of output files                                  |
-| fetchModuleFile  | Fetch impl file path                                 |
-| handleGenPath    | Processing generated paths                           |
-| handlePostScript | post script to customize the result                  |
-| handleGenPath    | custom generated file path                           |
+| Param            | Description                                   |
+| ---------------- | --------------------------------------------- |
+| url              | The url of fetch openapi or swagger data      |
+| path             | The filePath of fetch openapi or swagger data |
+| object           | The docs of fetch openapi or swagger data     |
+| outputDir        | Dir of output files                           |
+| fetchModuleFile  | Fetch impl file path                          |
+| handlePostScript | post script to customize the result           |
+| handleGenPath    | custom generated file path                    |
