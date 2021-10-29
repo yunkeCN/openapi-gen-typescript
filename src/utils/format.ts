@@ -5,14 +5,11 @@ import { format as prettify, Options } from 'prettier';
 import { IFileCode, IFileMap } from './type';
 
 const DEFAULT_OPTIONS: Options = {
-  bracketSpacing: false,
   printWidth: 80,
   semi: true,
-  singleQuote: false,
+  singleQuote: true,
   tabWidth: 2,
   trailingComma: 'none',
-  quoteProps: 'preserve',
-  useTabs: false,
 };
 
 // 格式化代码

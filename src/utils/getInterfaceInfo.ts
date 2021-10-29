@@ -217,7 +217,14 @@ export const handleSchema = (props: IHandleSchema) => {
       const transformObject = transform(schemaObject);
       schemasTypesCode.push(`export type ${schemaKey} = ${transformObject}`);
       const classObject = transformObject.replace(/[()]/g, '').replace(/components.schemas./g, '');
-      schemasClassCode.push(`export class ${schemaKey} ${classObject}\n`);
+      // 处理当组件为数组的情况
+      if (classObject.endsWith('[]')) {
+        const classObjectRemoveArrayMark = classObject.substr(0, classObject.length - 2);
+        schemasClassCode.push(`export class ${schemaKey}Item ${classObjectRemoveArrayMark}\n`);
+        schemasClassCode.push(`export type ${schemaKey} = ${schemaKey}Item[]\n`);
+      } else {
+        schemasClassCode.push(`export class ${schemaKey} ${classObject}\n`);
+      }
     });
   }
   return {

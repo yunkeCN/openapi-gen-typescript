@@ -33,6 +33,7 @@ export const writeFileFromIFileCode = async (props: IProps) => {
       await mkdirp(`${outputDir}/${dirName}`);
       fileList.forEach(el => {
         const pathCode = [
+          '/* tslint:disable */',
           `/**
           * @namespace ${el.fileName}
           * @summary ${el.summary}
@@ -56,9 +57,16 @@ export const writeFileFromIFileCode = async (props: IProps) => {
 
   fs.writeFileSync(`${outputDir}/index.ts`, formatCode(typesCode));
 
+  if (schemasTypesCode.length > 0) {
+    const schemasCodeArray = schemasTypesCode.map(item =>
+      item.replace(/[()]/g, '').replace(/components.schemas./g, ''),
+    );
+    const schemasCode = [NotModifyCode, schemasCodeArray.join('\n')].join('\n');
+    fs.writeFileSync(`${outputDir}/schemasTypes.ts`, formatCode(schemasCode));
+  }
   if (schemasClassCode.length > 0) {
-    const schemasCode = [NotModifyCode, schemasClassCode.join('\n')].join('\n');
-    fs.writeFileSync(`${outputDir}/schemas.ts`, formatCode(schemasCode));
+    const classCode = [NotModifyCode, schemasClassCode.join('\n')].join('\n');
+    fs.writeFileSync(`${outputDir}/schemas.ts`, formatCode(classCode));
   }
 };
 
