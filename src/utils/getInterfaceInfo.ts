@@ -54,7 +54,7 @@ export async function genContentFromComponents(
   arr: string[],
 ): Promise<string> {
   const splitRef = ref.replace(/^[^/]+\/components\//, '').split('/');
-  const result = _.get(openApiData.components, splitRef.join('.'));
+  const result = _.get(openApiData.components, splitRef);
   const { content, description }: ReferenceObject & RequestBodyObject = result as any;
   const requestBodyCode = await genCodeFromContent(content, typename, description, arr);
   return requestBodyCode;
