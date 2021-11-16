@@ -1632,8 +1632,8 @@ onetime@^5.1.0, onetime@^5.1.2:
 
 openapi-types@^7.0.1:
   version "7.2.3"
-  resolved "https://registry.npmmirror.com/openapi-types/download/openapi-types-7.2.3.tgz?cache=0&sync_timestamp=1636738724052&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2Fopenapi-types%2Fdownload%2Fopenapi-types-7.2.3.tgz#83829911a3410a022f0e0cf2b0b2e67232ccf96e"
-  integrity sha1-g4KZEaNBCgIvDgzysLLmcjLM+W4=
+  resolved "https://registry.yarnpkg.com/openapi-types/-/openapi-types-7.2.3.tgz#83829911a3410a022f0e0cf2b0b2e67232ccf96e"
+  integrity sha512-olbaNxz12R27+mTyJ/ZAFEfUruauHH27AkeQHDHRq5AF0LdNkK1SSV7EourXQDK+4aX7dv2HtyirAGK06WMAsA==
 
 optionator@^0.9.1:
   version "0.9.1"
