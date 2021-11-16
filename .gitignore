@@ -6,4 +6,5 @@ dist
 mars.json
 test_mars.ts
 test_array.ts
+test_for_grpc.ts
 array-components.json
