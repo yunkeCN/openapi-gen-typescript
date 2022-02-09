@@ -77,7 +77,7 @@ export async function genCodeFromContent(
       }`;
       let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
       if (jsonSchema.lastIndexOf('[]') === jsonSchema.length - 2) {
-        jsonSchema = jsonSchema.replace(/\(|\)|(\[\])+/g, '');
+        jsonSchema = jsonSchema.replace(/\(|\)|(\[\]$)/g, '');
         responseTypeNames.push(`${responseTypeName}[]`);
       } else if (/^\(([\s\S]+)\)$/.test(jsonSchema)) {
         jsonSchema = jsonSchema.replace(/^\(([\s\S]+)\)$/, '$1');
