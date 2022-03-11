@@ -4,6 +4,7 @@ export const AllMethods: methods[] = ['get', 'post', 'options', 'put', 'delete',
 
 export const SortList = [
   'requestUrl',
+  'requestMethod',
   'requestPathCode',
   'requestQueryCode',
   'requestHeaderCode',
