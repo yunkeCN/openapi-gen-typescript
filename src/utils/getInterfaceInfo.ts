@@ -62,11 +62,11 @@ export async function genContentFromComponents(
   return requestBodyCode;
 }
 
-export async function genCodeFromHeaders(headers: ContentHeaders, headerResonseName: string) {
+export async function genCodeFromHeaders(headers: ContentHeaders, headerResponseName: string) {
   if (isEmpty(headers)) {
-    return `export type ${headerResonseName} = {}`;
+    return `export type ${headerResponseName} = {}`;
   }
-  let tempCode = `export type ${headerResonseName} = {\n`;
+  let tempCode = `export type ${headerResponseName} = {\n`;
   Object.keys(headers)?.map(it => {
     const item = headers[it] as any;
     tempCode += `   ${getCamelcase(it)}${item?.request ? '' : '?'}: string\n`;
