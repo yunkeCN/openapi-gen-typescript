@@ -12,6 +12,7 @@ import {
   ContentObject,
   IGenParmas,
   IHandleSchema,
+  ContentHeaders,
 } from './type';
 import Axios from 'axios';
 import MediaTypeObject = OpenAPIV3.MediaTypeObject;
@@ -19,6 +20,7 @@ import ParameterBaseObject = OpenAPIV3.ParameterBaseObject;
 import ParameterObject = OpenAPIV3.ParameterObject;
 import ReferenceObject = OpenAPIV3.ReferenceObject;
 import RequestBodyObject = OpenAPIV3.RequestBodyObject;
+import { isEmpty } from 'lodash';
 
 function getCodeFromParameter(parameter: ParameterBaseObject, name: string): string {
   const { description, required } = parameter;
@@ -60,6 +62,19 @@ export async function genContentFromComponents(
   return requestBodyCode;
 }
 
+export async function genCodeFromHeaders(headers: ContentHeaders, headerResonseName: string) {
+  if (isEmpty(headers)) {
+    return `export type ${headerResonseName} = {}`;
+  }
+  let tempCode = `export type ${headerResonseName} = {\n`;
+  Object.keys(headers)?.map(it => {
+    const item = headers[it] as any;
+    tempCode += `   ${getCamelcase(it)}${item?.request ? '' : '?'}: string\n`;
+  }),
+    (tempCode = tempCode + '}');
+  return tempCode;
+}
+
 export async function genCodeFromContent(
   content: ContentObject,
   typeNamePrefix: string,
@@ -75,7 +90,8 @@ export async function genCodeFromContent(
       const responseTypeName = `${typeNamePrefix}${
         index > 0 ? getCamelcase(mediaType, { pascalCase: true }) : ''
       }`;
-      let jsonSchema = transform((content[mediaType] as MediaTypeObject).schema as IJsonSchema);
+      const tempSchema = (content[mediaType] as MediaTypeObject).schema as IJsonSchema;
+      let jsonSchema = transform(tempSchema);
       if (jsonSchema.lastIndexOf('[]') === jsonSchema.length - 2) {
         jsonSchema = jsonSchema.replace(/\(|\)|(\[\]$)/g, '');
         responseTypeNames.push(`${responseTypeName}[]`);
