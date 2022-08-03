@@ -6,9 +6,7 @@ import { deleteFolderRecursive } from '../src/utils/fileStream';
   await deleteFolderRecursive(`${__dirname}/gen`);
   // url
   await gen({
-    // url: 'https://petstore.swagger.io/v2/swagger.json',
-    url:
-      'https://api.myscrm.cn/api/v2/rest/export-openapi-rest?projectId=15704&branch=master&token=8994aaae6901182ac396&status=all',
+    url: 'https://petstore.swagger.io/v2/swagger.json',
     outputDir: `${__dirname}/gen/url/tags1`,
   });
   await gen({
