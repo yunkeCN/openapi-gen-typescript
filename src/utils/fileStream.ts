@@ -15,6 +15,8 @@ interface IProps {
   pathsCode: string[];
 }
 
+const hasRefRegex = /.+\??\:\s+schemas\..+;/;
+
 export const writeFileFromIFileCode = async (props: IProps) => {
   const {
     outputDir,
@@ -43,7 +45,9 @@ export const writeFileFromIFileCode = async (props: IProps) => {
             .replace(/\.ts$/, '')}';`
             .split(path.sep)
             .join('/'),
-          schemasClassCode.length > 0 ? `import * as schemas from '../schemas';\n` : '\n',
+          schemasClassCode.length > 0 && hasRefRegex.test(el.code)
+            ? `import * as schemas from '../schemas';\n`
+            : '\n',
           el.code,
         ].join('\n');
         fs.writeFileSync(`${outputDir}/${dirName}/${el.fileName}.ts`, formatCode(pathCode));
