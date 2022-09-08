@@ -146,8 +146,11 @@ export const genCodeForInterface = async (props: IProps) => {
 
   const requestUrl = `export const url = \`${pathSplicing(getBaseUrl(openApiData), urlPath)}\``;
 
+  const requestMethod = `export const method = '${method.toUpperCase()}'`;
+
   let exportObj: { [key: string]: string } = {
     requestUrl,
+    requestMethod,
     requestPathCode,
     requestQueryCode,
     requestHeaderCode,
