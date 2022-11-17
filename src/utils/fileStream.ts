@@ -15,8 +15,7 @@ interface IProps {
   pathsCode: string[];
 }
 
-const hasRefRegex = /.+\??\:\s+schemas\..+;/;
-const hasRefRegex2 = /extends\s+schemas\./;
+const hasRefRegex = /schemas\./;
 
 export const writeFileFromIFileCode = async (props: IProps) => {
   const {
@@ -46,7 +45,7 @@ export const writeFileFromIFileCode = async (props: IProps) => {
             .replace(/\.ts$/, '')}';`
             .split(path.sep)
             .join('/'),
-          schemasClassCode.length > 0 && (hasRefRegex.test(el.code) || hasRefRegex2.test(el.code))
+          schemasClassCode.length > 0 && hasRefRegex.test(el.code)
             ? `import * as schemas from '../schemas';\n`
             : '\n',
           el.code,
