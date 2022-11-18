@@ -15,7 +15,7 @@ interface IProps {
   pathsCode: string[];
 }
 
-const hasRefRegex = /.+\??\:\s+schemas\..+;/;
+const hasRefRegex = /schemas\./;
 
 export const writeFileFromIFileCode = async (props: IProps) => {
   const {
