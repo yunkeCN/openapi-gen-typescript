@@ -173,13 +173,7 @@ export const genCodeForInterface = async (props: IProps) => {
   pathsTypesCode.push(`export namespace ${namespaceName} {\n${pathsTypesArr.join('\n')}\n}`);
 
   const generateClassArr = exportArr.map(exp => {
-    const exp1 = exp.replace(/ interface | type = /g, ' class ');
-    const exp2 = exp1.replace(
-      / type ([^=]+) = components.([a-zA-Z0-9._]+)[;{}]?/g,
-      ' class $1 extends $2 {}',
-    );
-    const exp3 = exp2.replace(/ type ([^=]+) = {/g, ' class $1 {');
-    const exp4 = exp3.replace(/components.schemas/g, 'schemas');
+    const exp4 = exp.replace(/components.schemas/g, 'schemas');
     return exp4;
   });
 
