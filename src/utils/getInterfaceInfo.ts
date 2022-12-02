@@ -223,7 +223,7 @@ export const handleSchema = (props: IHandleSchema) => {
         schemasClassCode.push(`export type ${schemaKey}Item = ${classObjectRemoveArrayMark}\n`);
         schemasClassCode.push(`export type ${schemaKey} = ${schemaKey}Item[]\n`);
       } else {
-        schemasClassCode.push(`export interface ${schemaKey} ${classObject}\n`);
+        schemasClassCode.push(`export type ${schemaKey} = ${classObject}\n`);
       }
     });
   }
