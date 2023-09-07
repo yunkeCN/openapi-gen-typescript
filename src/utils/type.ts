@@ -10,6 +10,10 @@ export type ContentObject = {
   [media: string]: MediaTypeObject;
 };
 
+export type ContentHeaders = {
+  [header: string]: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject;
+};
+
 export interface IParameterMap {
   [name: string]: ParameterBaseObject;
 }
@@ -68,6 +72,7 @@ export type IFileMap = {
 
 export interface IGetReqParams {
   parameters: (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[];
+  responses?: (OpenAPIV3.ResponsesObject | undefined)[];
 }
 
 export interface IGetReqBody {

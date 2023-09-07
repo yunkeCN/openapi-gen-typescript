@@ -4,16 +4,18 @@
 
 import * as camelcase from 'camelcase';
 import * as _ from 'lodash';
+import { isEmpty } from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
 import { SortList } from '../constants';
 import { getBaseUrl, getCamelcase, pathSplicing } from './format';
 import {
   genCodeFromContent,
+  genCodeFromHeaders,
   genContentFromComponents,
   getReqBody,
   getReqParams,
 } from './getInterfaceInfo';
-import { ContentObject, IGenParmas } from './type';
+import { ContentHeaders, ContentObject, IGenParmas } from './type';
 import OperationObject = OpenAPIV3.OperationObject;
 import ResponseObject = OpenAPIV3.ResponseObject;
 import ReferenceObject = OpenAPIV3.ReferenceObject;
@@ -63,18 +65,23 @@ export const genCodeForInterface = async (props: IProps) => {
 
   // response
   const responseTypeNames: string[] = [];
+  const responseTypeHeaderNames: string[] = [];
   const responsesArr = Object.keys(responses as Object);
+  let responseHeaderCode = '';
   const responsesCode = (
     await Promise.all(
       responsesArr.map(async statusCode => {
         const responsesObjectElement: ResponseObject & ReferenceObject = (responses as any)[
           statusCode
         ];
-        const { $ref, content, description } = responsesObjectElement;
+        const { $ref, content, description, headers } = responsesObjectElement;
 
         const typeNamePrefix = `Response${camelcase(statusCode, {
           pascalCase: true,
         })}`;
+        if (!isEmpty(headers)) {
+          responseTypeHeaderNames.push(`${typeNamePrefix}Headers`);
+        }
         if ($ref) {
           const responseCode = await genContentFromComponents(
             openApiData,
@@ -82,7 +89,6 @@ export const genCodeForInterface = async (props: IProps) => {
             typeNamePrefix,
             requestBodyTypeNames,
           );
-
           return responseCode;
         } else {
           // response
@@ -91,6 +97,11 @@ export const genCodeForInterface = async (props: IProps) => {
             typeNamePrefix,
             description,
             responseTypeNames,
+          );
+
+          responseHeaderCode = await genCodeFromHeaders(
+            headers as ContentHeaders,
+            `${typeNamePrefix}Headers`,
           );
 
           return responseCode;
@@ -110,7 +121,9 @@ export const genCodeForInterface = async (props: IProps) => {
                 cookie?: Cookie;
               }, otherOptions?: any): Promise<{ body: ${
                 responseTypeNames.length > 0 ? responseTypeNames.join('|') : 'any'
-              } }> =>  {
+              }, headers?: ${
+    responseTypeHeaderNames.length > 0 ? responseTypeHeaderNames.join('|') : 'any'
+  } }> =>  {
                 let resolvedUrl = '${pathSplicing(getBaseUrl(openApiData), urlPath)}';
                 ${
                   _.isEmpty(requestPath)
@@ -145,6 +158,7 @@ export const genCodeForInterface = async (props: IProps) => {
     requestBodyCode,
     responsesCode,
     requestFuncTypeCode,
+    responseHeaderCode,
   };
 
   if (options.handlePostScript) {
